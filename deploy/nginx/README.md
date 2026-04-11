@@ -25,13 +25,14 @@ sudo ln -sf /etc/nginx/sites-available/fossgis.mapwebbing.eu.conf /etc/nginx/sit
 - DNS der Subdomain muss auf den Server zeigen.
 - Port 80 muss von aussen erreichbar sein (HTTP-01).
 
-Zertifikat (nginx-Plugin, passt die Site an):
+Die Vorlage `fossgis.mapwebbing.eu.conf` nutzt **zwei** `server`-Bloecke: Port **80** (ACME, Redirect nach HTTPS) und Port **443** (TLS, `proxy_pass` nach dem Backend). Zertifikatszeilen gehoeren nur in den **443**-Block.
+
+Zertifikat einrichten (nginx-Plugin):
 
 ```bash
 sudo certbot --nginx -d fossgis.mapwebbing.eu
+sudo nginx -t && sudo systemctl reload nginx
 ```
-
-Falls die `ssl_certificate`-Zeilen noch nicht passen: zuerst eine minimale HTTPS-Server-Block-Variante ohne die letzencrypt-Pfade nutzen oder certbot-Anleitung der Distribution befolgen. Nach erfolgreicher Ausstellung `sudo nginx -t && sudo systemctl reload nginx`.
 
 Erneuerung: typisch `certbot.timer` oder cron pruefen (`systemctl status certbot.timer`).
 

@@ -182,8 +182,10 @@ export function Dashboard() {
 
       {error && (
         <p className="dashboard__state dashboard__state--error" role="alert">
-          {error.includes("fetch")
-            ? "Backend nicht erreichbar. Läuft Uvicorn auf Port 8000?"
+          {error.toLowerCase().includes("fetch")
+            ? import.meta.env.VITE_API_BASE_URL?.trim()
+              ? "API nicht erreichbar oder durch CORS blockiert. Auf dem Server in backend/.env z. B. FRONTEND_ORIGIN=http://127.0.0.1:5173,http://localhost:5173 setzen und Dienst neu starten."
+              : "Backend nicht erreichbar. Läuft Uvicorn auf Port 8000?"
             : error}
         </p>
       )}

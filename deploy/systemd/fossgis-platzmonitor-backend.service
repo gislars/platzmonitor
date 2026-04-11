@@ -20,7 +20,8 @@ EnvironmentFile=-/opt/buchungdashboard/backend/.env
 # uv muss im PATH liegen (z. B. Symlink nach /usr/local/bin oder PATH unten erweitern)
 # Environment=PATH=/usr/local/bin:/usr/bin
 
-ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+# Kein Access-Log hier: wiederholte GETs spammen das Journal; Zugriffe siehe nginx access.log
+ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 Restart=on-failure
 RestartSec=5
 

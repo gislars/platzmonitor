@@ -11,7 +11,7 @@ Datei: `fossgis-platzmonitor-backend.service`
 Optional, wenn Swagger unter `https://fossgis.mapwebbing.eu/backend/docs` korrekt sein soll und `DOCS_ENABLED=true` gesetzt ist:
 
 ```ini
-ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --root-path /backend
+ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --root-path /backend --no-access-log
 ```
 
 ## Installation auf dem Server
