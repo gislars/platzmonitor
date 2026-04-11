@@ -6,12 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.availability import router as availability_router
 from app.settings import get_settings
 
+
+def _root_path(raw: str) -> str:
+    p = raw.strip().strip("/")
+    return f"/{p}" if p else ""
+
+
 _settings = get_settings()
+_rp = _root_path(_settings.root_path)
 app = FastAPI(
     title="FOSSGIS Platzmonitor API",
     version="0.1.0",
     docs_url="/docs" if _settings.docs_enabled else None,
     openapi_url="/openapi.json" if _settings.docs_enabled else None,
+    root_path=_rp,
 )
 _origins: list[str] = []
 if _settings.frontend_origin.strip():

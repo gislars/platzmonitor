@@ -31,6 +31,14 @@ class Settings(BaseSettings):
         alias="DOCS_ENABLED",
         description="Swagger UI und /openapi.json; Standard aus (Produktion)",
     )
+    root_path: str = Field(
+        default="",
+        alias="ROOT_PATH",
+        description=(
+            "URL-Prefix hinter Reverse-Proxy (z. B. /backend), damit /docs die OpenAPI-URL "
+            "korrekt auflöst; leer wenn die App an der Domainwurzel hängt"
+        ),
+    )
     pretalx_schedule_url: str = Field(
         default="https://pretalx.com/fossgis2026/schedule/export/schedule.json",
         alias="PRETALX_SCHEDULE_URL",

@@ -17,6 +17,10 @@ Environment=PYTHONPATH=src
 # Laedt backend/.env (optional; Zeile mit - = Datei darf fehlen)
 EnvironmentFile=-/opt/buchungdashboard/backend/.env
 
+# Wie deploy/nginx location /backend/: Swagger UI muss /backend/openapi.json laden, nicht /openapi.json.
+# Nur FastAPI-ROOT_PATH (siehe app), nicht uvicorn --root-path (sonst stimmt path-Routing mit nginx-rewrite nicht).
+Environment=ROOT_PATH=/backend
+
 # uv muss im PATH liegen (z. B. Symlink nach /usr/local/bin oder PATH unten erweitern)
 # Environment=PATH=/usr/local/bin:/usr/bin
 

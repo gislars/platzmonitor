@@ -38,7 +38,7 @@ Erneuerung: typisch `certbot.timer` oder cron pruefen (`systemctl status certbot
 
 ## 4. Backend
 
-uvicorn laeuft auf `127.0.0.1:8000` (siehe `deploy/systemd/`). Oeffentliche API-Beispiel-URL:
+uvicorn laeuft auf `127.0.0.1:8000` (siehe `deploy/systemd/`). Swagger: `DOCS_ENABLED=true` und `ROOT_PATH` (in der mitgelieferten Unit per `Environment=ROOT_PATH=/backend`). Oeffentliche API-Beispiel-URL:
 
 `https://fossgis.mapwebbing.eu/backend/api/v1/availability`
 

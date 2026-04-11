@@ -8,11 +8,7 @@ Datei: `fossgis-platzmonitor-backend.service`
 2. `WorkingDirectory` und `EnvironmentFile`: absoluter Pfad zu eurem `backend/`-Ordner (nach `git clone`).
 3. `ExecStart`: Falls `uv` nicht gefunden wird, entweder `PATH` in der Unit setzen oder den vollen Pfad zu `uv` aus `which uv` eintragen.
 
-Optional, wenn Swagger unter `https://fossgis.mapwebbing.eu/backend/docs` korrekt sein soll und `DOCS_ENABLED=true` gesetzt ist:
-
-```ini
-ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --root-path /backend --no-access-log
-```
+Swagger unter `https://fossgis.mapwebbing.eu/backend/docs` braucht **`DOCS_ENABLED=true`** und einen gesetzten **`ROOT_PATH`** (öffentliche OpenAPI-URL muss `/backend/openapi.json` sein, nicht `/openapi.json`). Die Unit setzt dafür **`Environment=ROOT_PATH=/backend`** (passt zu `deploy/nginx/`). Technisch setzt FastAPI damit `scope["root_path"]`; **`uvicorn --root-path`** darf hier **nicht** genutzt werden, weil nginx den Request-Pfad bereits auf `/…` ohne `/backend` normalisiert und sonst das Routing bricht.
 
 ## Installation auf dem Server
 
