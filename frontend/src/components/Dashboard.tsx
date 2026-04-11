@@ -1,0 +1,220 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { fetchAvailability } from "../api";
+import { getKioskMode } from "../kiosk";
+import { isEntryStartInFutureOrNow } from "../entryStartTime";
+import { sortEntriesByDateTimeAsc } from "../sortEntries";
+import type { AvailabilityResponse, Entry } from "../types";
+import { useDisplayConfig } from "../useDisplayConfig";
+import { ConfigPanel } from "./ConfigPanel";
+import { GroupSection } from "./GroupSection";
+
+function formatFetched(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("de-DE", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+export function Dashboard() {
+  const displayConfig = useDisplayConfig();
+  const [kiosk] = useState(getKioskMode);
+
+  const [data, setData] = useState<AvailabilityResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [globalPageIndex, setGlobalPageIndex] = useState(0);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const res = await fetchAvailability();
+      setData(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+    const id = window.setInterval(() => void load(), displayConfig.pollMs);
+    return () => window.clearInterval(id);
+  }, [load, displayConfig.pollMs]);
+
+  const hasEntries = data?.groups.some((g) => g.entries.length > 0) ?? false;
+
+  const sortedGroups = useMemo(() => {
+    if (!data?.groups) {
+      return null;
+    }
+    return data.groups.map((g) => ({
+      ...g,
+      entries: sortEntriesByDateTimeAsc(g.entries),
+    }));
+  }, [data]);
+
+  const filteredGroups = useMemo(() => {
+    if (!sortedGroups) {
+      return null;
+    }
+
+    const filterEntry = (e: Entry) => {
+      if (displayConfig.hideSoldOutEntries && e.status === "sold_out") {
+        return false;
+      }
+      if (displayConfig.hidePastEntries && !isEntryStartInFutureOrNow(e)) {
+        return false;
+      }
+      return true;
+    };
+
+    return sortedGroups.map((g) => ({
+      ...g,
+      entries: g.entries.filter(filterEntry),
+    }));
+  }, [sortedGroups, displayConfig.hideSoldOutEntries, displayConfig.hidePastEntries]);
+
+  const visibleGroups = useMemo(() => {
+    if (!filteredGroups) {
+      return [];
+    }
+    if (!displayConfig.hideEmptyGroups) {
+      return filteredGroups;
+    }
+    return filteredGroups.filter((g) => g.entries.length > 0);
+  }, [filteredGroups, displayConfig.hideEmptyGroups]);
+
+  useEffect(() => {
+    setGlobalPageIndex(0);
+  }, [visibleGroups.length, displayConfig.groupRotationMode]);
+
+  useEffect(() => {
+    if (displayConfig.groupRotationMode !== "global") {
+      return;
+    }
+    const id = window.setInterval(() => {
+      setGlobalPageIndex((p) => p + 1);
+    }, displayConfig.pageRotationMs);
+    return () => window.clearInterval(id);
+  }, [displayConfig.groupRotationMode, displayConfig.pageRotationMs]);
+
+  const groupGridColumns = useMemo(() => {
+    const n = visibleGroups.length;
+    if (n === 0) {
+      return 1;
+    }
+    return Math.min(n, displayConfig.maxGroupColumns);
+  }, [visibleGroups.length, displayConfig.maxGroupColumns]);
+
+  const subline = useMemo(() => {
+    const stand = data ? formatFetched(data.fetchedAt) : "—";
+    const n = visibleGroups.length;
+    if (n === 0) {
+      return `Stand ${stand}`;
+    }
+    return `Stand ${stand} · ${n} ${n === 1 ? "Gruppe" : "Gruppen"}`;
+  }, [data, visibleGroups.length]);
+
+  const eventTitle = (data?.event.title?.trim() || "FOSSGIS").trim();
+
+  const rootClass = kiosk ? "dashboard dashboard--kiosk" : "dashboard";
+
+  const groupsStyle = {
+    gridTemplateColumns: `repeat(${groupGridColumns}, minmax(0, 1fr))`,
+  } as const;
+
+  return (
+    <div className={rootClass}>
+      <header className="dashboard__header">
+        <div className="dashboard__header-lead" aria-hidden="true" />
+        <div className="dashboard__header-center">
+          <h1 className="dashboard__title">{eventTitle}</h1>
+          <p className="dashboard__tagline">Freie Plätze</p>
+          <p
+            className="dashboard__help"
+            style={
+              {
+                "--dashboard-help-rotation-ms": `${displayConfig.pageRotationMs}ms`,
+              } as CSSProperties
+            }
+          >
+            <span className="dashboard__help-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M12 16v-4M12 8h.01M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span className="dashboard__help-text">
+              <strong className="dashboard__help-kicker">Nachbuchung</strong>
+              <span className="dashboard__help-sep"> · </span>
+              Bitte Help-Desk ansprechen.
+            </span>
+          </p>
+          <p className="dashboard__sub">{subline}</p>
+        </div>
+        <div className="dashboard__header-actions">
+          {!kiosk ? (
+            <button type="button" className="dashboard__refresh" onClick={() => void load()}>
+              Aktualisieren
+            </button>
+          ) : null}
+        </div>
+      </header>
+
+      {loading && !data && (
+        <p className="dashboard__state" role="status">
+          Daten werden geladen …
+        </p>
+      )}
+
+      {error && (
+        <p className="dashboard__state dashboard__state--error" role="alert">
+          {error.includes("fetch")
+            ? "Backend nicht erreichbar. Läuft Uvicorn auf Port 8000?"
+            : error}
+        </p>
+      )}
+
+      {data && !hasEntries && !error && (
+        <p className="dashboard__state">
+          Keine passenden Angebote (Filter) oder keine freien Einträge.
+        </p>
+      )}
+
+      {visibleGroups.length > 0 ? (
+        <div className="dashboard__groups" style={groupsStyle}>
+          {visibleGroups.map((group) => (
+            <GroupSection
+              key={`${group.id}-${displayConfig.tilesPerPage}-${group.entries.length}-${displayConfig.groupRotationMode}`}
+              group={group}
+              tilesPerPage={displayConfig.tilesPerPage}
+              cols={displayConfig.cols}
+              rows={displayConfig.rows}
+              pageRotationMs={displayConfig.pageRotationMs}
+              rotationMode={displayConfig.groupRotationMode}
+              globalPageIndex={globalPageIndex}
+              onGlobalPageSelect={
+                displayConfig.groupRotationMode === "global" ? setGlobalPageIndex : undefined
+              }
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {!kiosk ? <ConfigPanel config={displayConfig} /> : null}
+    </div>
+  );
+}

@@ -1,0 +1,26 @@
+.env
+.env.local
+.env.*.local
+*.pem
+node_modules/
+.pnpm-store/
+dist/
+build/
+.vite/
+coverage/
+*.log
+npm-debug.log*
+.eslintcache
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.mypy_cache/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Hilfs-Skript scripts/ (eigenes uv-Projekt, Dumps)
+scripts/.venv/
+scripts/output/

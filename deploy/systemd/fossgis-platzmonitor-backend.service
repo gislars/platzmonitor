@@ -1,0 +1,31 @@
+[Unit]
+Description=FOSSGIS Platzmonitor Backend (FastAPI / uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Anpassen: Unix-User, der den Dienst ausfuehrt (Besitzer von WorkingDirectory und .env)
+User=www-data
+Group=www-data
+
+# Anpassen: absoluter Pfad zum backend/-Verzeichnis des geklonten Repos
+WorkingDirectory=/opt/buchungdashboard/backend
+
+Environment=PYTHONPATH=src
+# Laedt backend/.env (optional; Zeile mit - = Datei darf fehlen)
+EnvironmentFile=-/opt/buchungdashboard/backend/.env
+
+# uv muss im PATH liegen (z. B. Symlink nach /usr/local/bin oder PATH unten erweitern)
+# Environment=PATH=/usr/local/bin:/usr/bin
+
+ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

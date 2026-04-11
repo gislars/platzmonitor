@@ -1,0 +1,9 @@
+{
+  "name": "fossgis-platzmonitor",
+  "private": true,
+  "scripts": {
+    "lint": "pnpm --dir frontend lint && cd backend && PYTHONPATH=src uv run ruff check src",
+    "format": "pnpm --dir frontend format && cd backend && PYTHONPATH=src uv run ruff format src",
+    "typecheck": "pnpm --dir frontend typecheck"
+  }
+}
