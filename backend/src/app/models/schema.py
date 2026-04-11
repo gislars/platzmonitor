@@ -47,6 +47,11 @@ class Entry(BaseModel):
         serialization_alias="sortAt",
         description="Frühester bekannter Zeitpunkt aus pretix (Item), für Sortierung",
     )
+    pretalx_code: str | None = Field(
+        default=None,
+        serialization_alias="pretalxCode",
+        description="Session-Code aus Pretalx-Schedule bei Titel-Match; sonst null",
+    )
     waiting_list_enabled: bool = Field(
         default=False,
         serialization_alias="waitingListEnabled",

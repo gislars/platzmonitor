@@ -20,6 +20,8 @@ export interface Entry {
   status: EntryStatus;
   /** ISO 8601, für Sortierung (optional) */
   sortAt?: string | null;
+  /** Pretalx-Session-Code bei Titel-Match im Schedule; sonst null/undefined */
+  pretalxCode?: string | null;
   waitingListEnabled?: boolean;
   /** null, wenn pretix-Warteliste nicht abrufbar (z. B. fehlende Token-Rechte) */
   waitingListCount?: number | null;

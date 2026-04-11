@@ -1,1 +1,5 @@
-from app.pretalx.schedule import load_pretalx_schedule, match_sort_at  # noqa: F401
+from app.pretalx.schedule import (  # noqa: F401
+    load_pretalx_schedule,
+    match_pretalx_meta,
+    match_sort_at,
+)

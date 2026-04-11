@@ -27,7 +27,7 @@ Hinweise:
 - `src/app/main.py` – App, CORS optional ueber `FRONTEND_ORIGIN` oder `FRONTEND_ORIGIN_REGEX`
 - `src/app/routes/availability.py` – `GET /api/v1/availability`
 - `src/app/pretix/client.py` – pretix REST (Items, Quotas, Event-Metadaten, Warteliste)
-- `src/app/pretalx/schedule.py` – Schedule laden, Startzeiten für Labels
+- `src/app/pretalx/schedule.py` – Schedule laden, Startzeiten und Pretalx-`code` pro Titel-Match
 - `src/app/services/availability_service.py` – Gruppenlogik, Filter, Aggregation
 
 ## Start
@@ -42,6 +42,7 @@ PYTHONPATH=src uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 - OpenAPI: `http://127.0.0.1:8000/docs` (nur wenn **`DOCS_ENABLED=true`**)
 - Endpoint: `GET /api/v1/availability`
+- Antwort: Jeder Eintrag in `groups[].entries[]` kann **`pretalxCode`** enthalten (Pretalx-Session-`code`), wenn der Quoten-Name nach derselben Logik wie `sortAt` mit dem Schedule gematcht wird; sonst `null`.
 
 ## Deployment
 

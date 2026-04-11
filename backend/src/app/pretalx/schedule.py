@@ -80,8 +80,18 @@ def _extract_events_from_frab(schedule: dict[str, Any]) -> list[dict[str, Any]]:
     return events
 
 
-def build_title_to_start_map(schedule_json: dict[str, Any]) -> dict[str, datetime]:
-    mapping: dict[str, datetime] = {}
+def _event_code(ev: dict[str, Any]) -> str | None:
+    raw = ev.get("code")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return None
+
+
+def build_title_to_meta_map(
+    schedule_json: dict[str, Any],
+) -> dict[str, tuple[datetime, str | None]]:
+    """Pro normalisiertem Titel: fruehester Start und Pretalx-``code`` vom selben Event."""
+    mapping: dict[str, tuple[datetime, str | None]] = {}
     for ev in _extract_events_from_frab(schedule_json):
         title = ev.get("title")
         if not isinstance(title, str) or not title.strip():
@@ -93,16 +103,16 @@ def build_title_to_start_map(schedule_json: dict[str, Any]) -> dict[str, datetim
         if dt is None:
             continue
         key = _normalize_title(title)
-        # Bei Duplikaten den fruehesten Start behalten
+        code = _event_code(ev)
         prev = mapping.get(key)
-        if prev is None or dt < prev:
-            mapping[key] = dt
+        if prev is None or dt < prev[0]:
+            mapping[key] = (dt, code)
     return mapping
 
 
 @dataclass(frozen=True)
 class PretalxSchedule:
-    title_to_start: dict[str, datetime]
+    title_to_meta: dict[str, tuple[datetime, str | None]]
 
 
 _CACHE: tuple[float, PretalxSchedule] | None = None
@@ -131,11 +141,19 @@ def load_pretalx_schedule(settings: Settings) -> PretalxSchedule | None:
     if not isinstance(data, dict):
         return None
 
-    sched = PretalxSchedule(title_to_start=build_title_to_start_map(data))
+    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(data))
     _CACHE = (now, sched)
     return sched
 
 
-def match_sort_at(label: str, sched: PretalxSchedule) -> datetime | None:
+def match_pretalx_meta(label: str, sched: PretalxSchedule) -> tuple[datetime | None, str | None]:
     key = _normalize_title(label)
-    return sched.title_to_start.get(key)
+    meta = sched.title_to_meta.get(key)
+    if meta is None:
+        return (None, None)
+    return (meta[0], meta[1])
+
+
+def match_sort_at(label: str, sched: PretalxSchedule) -> datetime | None:
+    dt, _ = match_pretalx_meta(label, sched)
+    return dt

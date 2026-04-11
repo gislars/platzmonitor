@@ -12,7 +12,7 @@ from app.models.schema import (
     EventInfo,
     Group,
 )
-from app.pretalx.schedule import load_pretalx_schedule, match_sort_at
+from app.pretalx.schedule import load_pretalx_schedule, match_pretalx_meta
 from app.pretix.client import fetch_event, fetch_items_and_quotas, fetch_waiting_list_entries
 from app.services.group_rules import find_group_for_label, load_group_rules
 from app.settings import Settings
@@ -125,6 +125,7 @@ def _quota_to_entry(
     label: str,
     group_id: str,
     sort_at: datetime | None,
+    pretalx_code: str | None,
     waiting_list_enabled: bool,
     waiting_list_count: int | None,
 ) -> Entry:
@@ -153,6 +154,7 @@ def _quota_to_entry(
         availability=availability,
         status=status,
         sort_at=sort_at,
+        pretalx_code=pretalx_code,
         waiting_list_enabled=waiting_list_enabled,
         waiting_list_count=waiting_list_count,
     )
@@ -194,14 +196,19 @@ def build_availability(settings: Settings) -> AvailabilityResponse:
         # Abgesagte / deaktivierte Produkte in pretix nicht im Dashboard anzeigen
         if item is not None and item.get("active") is False:
             continue
-        sort_at = match_sort_at(label, schedule) if schedule else None
+        sort_at: datetime | None
+        pretalx_code: str | None
+        if schedule:
+            sort_at, pretalx_code = match_pretalx_meta(label, schedule)
+        else:
+            sort_at, pretalx_code = None, None
         # Wenn ein pretalx-Schedule verfuegbar ist, zeigen wir nur Workshops mit Match.
         # So fallen Tippfehler auf und erscheinen nicht "unsortiert" im Dashboard.
         if group_id == "workshops" and schedule is not None and sort_at is None:
             continue
         wl_enabled = bool(item.get("allow_waitinglist")) if item else False
         wl_count = _count_waiting_for_quota(quota, wl_entries) if wl_ok else None
-        entry = _quota_to_entry(quota, label, group_id, sort_at, wl_enabled, wl_count)
+        entry = _quota_to_entry(quota, label, group_id, sort_at, pretalx_code, wl_enabled, wl_count)
         add_entry(group_id, group_title, entry)
 
     for entries in buckets.values():
