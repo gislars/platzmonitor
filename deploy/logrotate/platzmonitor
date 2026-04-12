@@ -1,0 +1,11 @@
+# Beispiel: nach /etc/logrotate.d/platzmonitor kopieren und anpassen.
+# Bei abweichendem LOG_FILE im Backend dieselbe Datei hier eintragen.
+
+/var/log/platzmonitor/app.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

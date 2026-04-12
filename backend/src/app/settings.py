@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     )
     group_other_id: str = Field(default="other", alias="GROUP_OTHER_ID")
     group_other_title: str = Field(default="Sonstiges", alias="GROUP_OTHER_TITLE")
+    log_level: str = Field(
+        default="INFO",
+        alias="LOG_LEVEL",
+        description="Python-Log-Level fuer Logger pm (DEBUG, INFO, WARNING, ...)",
+    )
+    log_file: str = Field(
+        default="",
+        alias="LOG_FILE",
+        description="App-Logdatei; leer = /var/log/platzmonitor/app.log",
+    )
 
 
 @lru_cache

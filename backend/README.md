@@ -10,6 +10,13 @@ Liest pretix (Items, Quotas, Warteliste), reichert mit pretalx-Schedule an, lief
 | Ausgehende Requests | optional **`HTTP_USER_AGENT`** (pretix und pretalx) |
 | **OpenAPI** (`/docs`) | Standard **aus**. Zum Einschalten: **`DOCS_ENABLED=true`**, Dienst neu starten |
 | Hinter URL-Praefix `/backend` | in der systemd-Unit **`ROOT_PATH=/backend`** setzen (siehe [`deploy/systemd/README.md`](../deploy/systemd/README.md)), nicht doppelt mit `uvicorn --root-path` kombinieren |
+| **App-Logs** | **`LOG_LEVEL`** (Standard INFO), **`LOG_FILE`** (leer: `/var/log/platzmonitor/app.log`). Rotation nur systemweit, siehe [`deploy/logrotate/platzmonitor`](../deploy/logrotate/platzmonitor) |
+
+### Logging
+
+- Logger unter dem Namensraum **`pm`** (z. B. `pm.main`, `pm.availability`). **`uvicorn`** schreibt weiter nach **stderr** (journalctl); die App-Logdatei enthaelt die Meldungen aus der Aggregationslogik.
+- Keine Secrets: kein `PRETIX_TOKEN`, keine URLs mit geheimen Query-Parametern in Meldungen.
+- Dieselbe erkennbare Ursache nicht an mehreren Stellen loggen (Refresh-Fehler im Cache-Layer, Erfolg nach Build in `availability_service`).
 
 ### CORS (nur Multihost)
 

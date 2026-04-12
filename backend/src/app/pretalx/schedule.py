@@ -9,8 +9,11 @@ from typing import Any
 
 import httpx
 
+from app.loggers import get_logger
 from app.outgoing_http import pretalx_headers
 from app.settings import Settings
+
+_log = get_logger("pretalx")
 
 
 def _normalize_title(raw: str) -> str:
@@ -135,7 +138,14 @@ def load_pretalx_schedule(settings: Settings) -> PretalxSchedule | None:
             r = client.get(url, headers=pretalx_headers(settings))
             r.raise_for_status()
             data = json.loads(r.text)
-    except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError):
+    except httpx.HTTPStatusError as e:
+        _log.warning("Schedule nicht ladbar: HTTP %s", e.response.status_code)
+        return None
+    except httpx.RequestError as e:
+        _log.warning("Schedule nicht ladbar: %s", type(e).__name__)
+        return None
+    except json.JSONDecodeError:
+        _log.warning("Schedule nicht ladbar: JSONDecodeError")
         return None
 
     if not isinstance(data, dict):

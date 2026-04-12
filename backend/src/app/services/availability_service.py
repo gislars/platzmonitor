@@ -4,6 +4,7 @@ import time
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+from app.loggers import get_logger
 from app.models.schema import (
     AvailabilityFinite,
     AvailabilityResponse,
@@ -16,6 +17,8 @@ from app.pretalx.schedule import load_pretalx_schedule, match_pretalx_meta
 from app.pretix.client import fetch_event, fetch_items_and_quotas, fetch_waiting_list_entries
 from app.services.group_rules import find_group_for_label, load_group_rules
 from app.settings import Settings
+
+_log = get_logger("availability")
 
 
 def _localized_name(name_obj: Any) -> str:
@@ -50,8 +53,12 @@ def _get_event_title(settings: Settings) -> str:
     try:
         ev_raw = fetch_event(settings)
         title = _localized_name(ev_raw.get("name")).strip()
-    except Exception:
+    except Exception as e:
+        _log.warning("Event-Titel nicht ladbar: %s", type(e).__name__)
         title = ""
+    else:
+        if not title:
+            _log.warning("Event-Titel in pretix leer, nutze Fallback")
     if not title:
         title = f"{settings.organizer} · {settings.event}"
     _event_title_cache[key] = (title, now + _EVENT_TITLE_CACHE_TTL_S)
@@ -219,6 +226,15 @@ def build_availability(settings: Settings) -> AvailabilityResponse:
         Group(id=gid, title=titles[gid], entries=buckets[gid]) for gid in buckets if buckets[gid]
     ]
     group_list.sort(key=lambda g: g.title.casefold())
+
+    total_entries = sum(len(g.entries) for g in group_list)
+    _log.info(
+        "Verfuegbarkeit aktualisiert: groups=%s entries=%s organizer=%s event=%s",
+        len(group_list),
+        total_entries,
+        settings.organizer,
+        settings.event,
+    )
 
     fetched = datetime.now(UTC)
 

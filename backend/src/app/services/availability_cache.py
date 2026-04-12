@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import logging
 import threading
 
 import httpx
 
+from app.loggers import get_logger
 from app.models.schema import AvailabilityResponse
 from app.services.availability_service import build_availability
 from app.settings import Settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger("cache")
 
 _lock = threading.Lock()
 _snapshot: AvailabilityResponse | None = None

@@ -4,8 +4,11 @@ from typing import Any
 
 import httpx
 
+from app.loggers import get_logger
 from app.outgoing_http import pretix_headers
 from app.settings import Settings
+
+_log = get_logger("pretix")
 
 
 def paginate_get(client: httpx.Client, start_url: str) -> list[dict[str, Any]]:
@@ -66,6 +69,7 @@ def fetch_items_and_quotas(settings: Settings) -> tuple[list[dict[str, Any]], li
     ) as client:
         items = paginate_get(client, f"{api}/items/")
         quotas = paginate_get(client, f"{api}/quotas/?with_availability=true")
+    _log.debug("pretix: items=%s quotas=%s", len(items), len(quotas))
     return items, quotas
 
 
@@ -104,9 +108,11 @@ def fetch_waiting_list_entries(settings: Settings) -> tuple[list[dict[str, Any]]
                 if isinstance(batch, list):
                     results.extend(batch)
                 url = data.get("next")
-    except httpx.HTTPStatusError:
+    except httpx.HTTPStatusError as e:
+        _log.warning("Warteliste nicht lesbar: HTTP %s", e.response.status_code)
         return [], False
     except httpx.RequestError:
+        _log.warning("Warteliste nicht lesbar: Netzwerkfehler")
         return [], False
 
     return results, True

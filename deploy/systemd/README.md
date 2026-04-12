@@ -24,7 +24,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now fossgis-platzmonitor-backend.service
 ```
 
-Logs: `journalctl -u fossgis-platzmonitor-backend.service -f`
+Logs: `journalctl -u fossgis-platzmonitor-backend.service -f` (Uvicorn/Server). Anwendungslogs mit konfigurierten Quellen und Snapshot-Zahlen stehen bei Standardkonfiguration in **`/var/log/platzmonitor/app.log`** (Verzeichnis anlegen und Rechte siehe Backend-README); Rotation z. B. mit [`deploy/logrotate/platzmonitor`](../logrotate/platzmonitor).
 
 ## User-Dienst
 

@@ -6,6 +6,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.loggers import get_logger
+from app.logging_config import configure_logging
+from app.logging_utils import safe_url_for_log
 from app.routes.availability import router as availability_router
 from app.services.availability_cache import refresh_availability_snapshot
 from app.settings import get_settings
@@ -19,11 +22,22 @@ def _root_path(raw: str) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    log = get_logger("main")
+    interval = max(5, int(settings.availability_refresh_seconds))
+    log.info("Start: availability_refresh_seconds=%s", interval)
+    log.info("App-Version %s", app.version)
+    log.info(
+        "Quellen: pretix_base=%s organizer=%s event=%s",
+        safe_url_for_log(settings.pretix_base_url),
+        settings.organizer,
+        settings.event,
+    )
+    log.info("pretalx_schedule=%s", safe_url_for_log(settings.pretalx_schedule_url))
+
     stop = asyncio.Event()
     await asyncio.to_thread(refresh_availability_snapshot, settings)
 
     async def refresh_loop() -> None:
-        interval = max(5, int(settings.availability_refresh_seconds))
         while True:
             try:
                 await asyncio.wait_for(stop.wait(), timeout=interval)
@@ -34,6 +48,7 @@ async def lifespan(app: FastAPI):
 
     task = asyncio.create_task(refresh_loop())
     yield
+    log.info("Shutdown: Refresh-Task wird beendet")
     stop.set()
     task.cancel()
     try:
@@ -43,6 +58,7 @@ async def lifespan(app: FastAPI):
 
 
 _settings = get_settings()
+configure_logging(_settings)
 _rp = _root_path(_settings.root_path)
 app = FastAPI(
     title="FOSSGIS Platzmonitor API",
