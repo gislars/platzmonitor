@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from datetime import UTC, datetime
 from typing import Any, Literal
 
@@ -34,34 +33,39 @@ def _localized_name(name_obj: Any) -> str:
     return str(name_obj) if name_obj is not None else ""
 
 
-_EVENT_TITLE_CACHE_TTL_S = 3600.0
-_event_title_cache: dict[str, tuple[str, float]] = {}
+_event_title_by_key: dict[str, str] = {}
 
 
 def _get_event_title(settings: Settings) -> str:
-    """Name aus pretix (gecached, damit nicht bei jedem Poll die Event-API trifft)."""
+    """Name aus pretix: einmal pro Prozess und Schlüssel laden, danach nur aus dem Speicher."""
     key = (
         f"{settings.pretix_base_url.rstrip('/')}|"
         f"{settings.organizer.strip()}|{settings.event.strip()}"
     )
-    now = time.monotonic()
-    hit = _event_title_cache.get(key)
-    if hit is not None:
-        title, until = hit
-        if now < until:
-            return title
+    cached = _event_title_by_key.get(key)
+    if cached is not None:
+        return cached
+
+    fallback = f"{settings.organizer} · {settings.event}"
     try:
         ev_raw = fetch_event(settings)
         title = _localized_name(ev_raw.get("name")).strip()
     except Exception as e:
-        _log.warning("Event-Titel nicht ladbar: %s", type(e).__name__)
-        title = ""
+        _log.warning(
+            "Event-Titel nicht ermittelbar (Fehler: %s), nutze Fallback %r",
+            type(e).__name__,
+            fallback,
+        )
+        title = fallback
     else:
         if not title:
-            _log.warning("Event-Titel in pretix leer, nutze Fallback")
-    if not title:
-        title = f"{settings.organizer} · {settings.event}"
-    _event_title_cache[key] = (title, now + _EVENT_TITLE_CACHE_TTL_S)
+            _log.warning(
+                "Event-Titel nicht ermittelbar (leerer Name in pretix), nutze Fallback %r",
+                fallback,
+            )
+            title = fallback
+
+    _event_title_by_key[key] = title
     return title
 
 
