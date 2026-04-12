@@ -1,47 +1,27 @@
-# nginx: fossgis.mapwebbing.eu
+# nginx (Beispiel: fossgis.mapwebbing.eu)
 
-## 1. Rate-Limit (einmalig, im `http`-Kontext)
+Voraussetzungen: DNS zeigt auf den Server, Port 80 fuer ACME erreichbar.
 
-Die Datei `http-snippet-limits.conf` muss **einmal** im `http { }`-Block von nginx eingebunden werden, sonst ist `zone=platzmonitor_api` unbekannt.
+## Schritte
 
-Beispiel Debian/Ubuntu:
+| # | Was | Kurz |
+|---|-----|------|
+| 1 | Rate-Limit | `http-snippet-limits.conf` **einmal** im `http { }`-Block einbinden (sonst unbekannt: `zone=platzmonitor_api`). Beispiel: nach `/etc/nginx/conf.d/zz-platzmonitor-limits.conf` kopieren, `nginx -t`, reload. |
+| 2 | Site | `fossgis.mapwebbing.eu.conf` nach `sites-available/` kopieren, nach `sites-enabled/` verlinken. |
+| 3 | TLS | `certbot --nginx -d fossgis.mapwebbing.eu`, dann `nginx -t` und reload. Erneuerung: z. B. `certbot.timer` pruefen. |
 
-```bash
-sudo cp http-snippet-limits.conf /etc/nginx/conf.d/zz-platzmonitor-limits.conf
-sudo nginx -t && sudo systemctl reload nginx
-```
+Die Site-Vorlage: HTTP (80) fuer Redirect/ACME, HTTPS (443) mit `proxy_pass` zum Backend. Zertifikat nur im 443-Block.
 
-Alternativ: Inhalt in `/etc/nginx/nginx.conf` unter `http {` per `include` einbinden.
+## Backend hinter diesem Setup
 
-## 2. Site aktivieren
+uvicorn laeuft typisch auf `127.0.0.1:8000` (siehe [`deploy/systemd/`](../systemd/)).
 
-```bash
-sudo cp fossgis.mapwebbing.eu.conf /etc/nginx/sites-available/
-sudo ln -sf /etc/nginx/sites-available/fossgis.mapwebbing.eu.conf /etc/nginx/sites-enabled/
-```
-
-## 3. TLS (certbot 1.21+)
-
-- DNS der Subdomain muss auf den Server zeigen.
-- Port 80 muss von aussen erreichbar sein (HTTP-01).
-
-Die Vorlage `fossgis.mapwebbing.eu.conf` nutzt **zwei** `server`-Bloecke: Port **80** (ACME, Redirect nach HTTPS) und Port **443** (TLS, `proxy_pass` nach dem Backend). Zertifikatszeilen gehoeren nur in den **443**-Block.
-
-Zertifikat einrichten (nginx-Plugin):
-
-```bash
-sudo certbot --nginx -d fossgis.mapwebbing.eu
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-Erneuerung: typisch `certbot.timer` oder cron pruefen (`systemctl status certbot.timer`).
-
-## 4. Backend
-
-uvicorn laeuft auf `127.0.0.1:8000` (siehe `deploy/systemd/`). Swagger: `DOCS_ENABLED=true` und `ROOT_PATH` (in der mitgelieferten Unit per `Environment=ROOT_PATH=/backend`). Oeffentliche API-Beispiel-URL:
+Beispiel-URL (mit nginx-Praefix `/backend`):
 
 `https://fossgis.mapwebbing.eu/backend/api/v1/availability`
 
-## 5. Frontend unter `/frontend/` (spaeter)
+Swagger oeffentlich: im Backend `DOCS_ENABLED=true` und `ROOT_PATH=/backend` (siehe systemd-README).
 
-Vite-Build mit `base: '/frontend/'` bauen, Inhalt von `dist/` nach z. B. `/var/www/platzmonitor/frontend/` legen (sodass `index.html` unter diesem Pfad liegt), dann die auskommentierte `location /frontend/` und `root` in der Site-Datei aktivieren und `nginx -t` erneut pruefen.
+## Frontend unter `/frontend/`
+
+Build mit `pnpm build` (`base: '/frontend/'`), Inhalt von `dist/` auf den Webserver legen (z. B. so dass `index.html` unter `/frontend/` erreichbar ist). In der Site-Datei die `location /frontend/` und `root` aktivieren, erneut `nginx -t`.

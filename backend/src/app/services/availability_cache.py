@@ -39,6 +39,11 @@ def refresh_availability_snapshot(settings: Settings) -> None:
         with _lock:
             _last_error = msg
         return
+    except Exception:
+        logger.exception("availability refresh: unexpected error")
+        with _lock:
+            _last_error = "Unerwarteter Fehler beim Aktualisieren der Verfügbarkeit"
+        return
     with _lock:
         _snapshot = data
         _last_error = None

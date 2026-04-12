@@ -22,9 +22,12 @@ class MatchContainsAny(BaseModel):
     values: list[str]
 
 
+_MAX_REGEX_PATTERN_LEN = 256
+
+
 class MatchRegex(BaseModel):
     type: Literal["regex"] = "regex"
-    pattern: str
+    pattern: str = Field(max_length=_MAX_REGEX_PATTERN_LEN)
 
 
 MatchSpec = MatchPrefix | MatchContainsAny | MatchRegex
@@ -57,7 +60,10 @@ def _match_name(name: str, spec: MatchSpec) -> bool:
     n = name.strip()
     cf = n.casefold()
     if isinstance(spec, MatchPrefix):
-        return n.startswith(spec.value)
+        prefix = spec.value.strip()
+        if not prefix:
+            return False
+        return cf.startswith(prefix.casefold())
     if isinstance(spec, MatchContainsAny):
         return any(v.casefold() in cf for v in spec.values)
     if isinstance(spec, MatchRegex):

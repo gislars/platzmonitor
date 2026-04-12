@@ -1,57 +1,54 @@
 # Backend (FastAPI)
 
-pretix-API lesen, mit pretalx-Schedule anreichern, JSON für das Dashboard liefern.
+Liest pretix (Items, Quotas, Warteliste), reichert mit pretalx-Schedule an, liefert JSON fuer das Frontend.
 
 ## Konfiguration
 
-Basis: `cp .env.example .env` und mindestens `PRETIX_TOKEN` setzen (Details siehe Root `README.md`). Optional `HTTP_USER_AGENT` fuer ausgehende Requests zu pretix und pretalx.
+| | |
+|---|---|
+| Erste Schritte | `cp .env.example .env`, mindestens **`PRETIX_TOKEN`** |
+| Ausgehende Requests | optional **`HTTP_USER_AGENT`** (pretix und pretalx) |
+| **OpenAPI** (`/docs`) | Standard **aus**. Zum Einschalten: **`DOCS_ENABLED=true`**, Dienst neu starten |
+| Hinter URL-Praefix `/backend` | in der systemd-Unit **`ROOT_PATH=/backend`** setzen (siehe [`deploy/systemd/README.md`](../deploy/systemd/README.md)), nicht doppelt mit `uvicorn --root-path` kombinieren |
 
-**OpenAPI/Swagger** (`/docs`, `/openapi.json`): Standard **aus**. Zum Aktivieren lokal oder temporaer auf dem Server: **`DOCS_ENABLED=true`** in `.env`, Dienst neu starten. Hinter nginx mit URL-Praefix `/backend` und aktivierten Docs optional **`--root-path /backend`** in der systemd-Unit (siehe `deploy/systemd/README.md`).
+### CORS (nur Multihost)
 
-### CORS (Singlehost und Multihost)
+Gleiche Origin wie das Frontend: kein CORS noetig. Sonst eine der Variablen:
 
-Wenn Frontend und Backend nicht unter derselben Origin laufen (Multihost), muss CORS im Backend erlaubt werden.
+| Variable | Nutzen |
+|----------|--------|
+| `FRONTEND_ORIGIN` | Komma-separierte Liste, z. B. `https://a.example.org,https://b.example.org` |
+| `FRONTEND_ORIGIN_REGEX` | Viele Hosts (z. B. Raspberry Pi); **Vorrang** vor `FRONTEND_ORIGIN`, Regex eng halten |
 
-- **Explizite Liste** (gut wenn du wenige feste Hosts hast):
-  - `FRONTEND_ORIGIN=https://infoscreen.example.org,https://zweiter-host.example.org`
-- **Wildcard per Regex** (gut fuer viele Frontend Hosts, zB viele Raspberry Pi):
-  - `FRONTEND_ORIGIN_REGEX=^https?://([a-z0-9-]+\.)?infoscreen\.example\.org(:\d+)?$`
+## Code
 
-Hinweise:
+| Pfad | Rolle |
+|------|--------|
+| `src/app/main.py` | App, CORS |
+| `src/app/routes/availability.py` | `GET /api/v1/availability` |
+| `src/app/pretix/client.py` | pretix REST |
+| `src/app/pretalx/schedule.py` | Schedule, Titel-Match |
+| `src/app/services/availability_service.py` | Gruppen, Aggregation |
 
-- Wenn `FRONTEND_ORIGIN_REGEX` gesetzt ist, hat es Vorrang vor `FRONTEND_ORIGIN`.
-- Regex moeglichst eng halten (Security).
-
-## Einstiegspunkte
-
-- `src/app/main.py` – App, CORS optional ueber `FRONTEND_ORIGIN` oder `FRONTEND_ORIGIN_REGEX`
-- `src/app/routes/availability.py` – `GET /api/v1/availability`
-- `src/app/pretix/client.py` – pretix REST (Items, Quotas, Event-Metadaten, Warteliste)
-- `src/app/pretalx/schedule.py` – Schedule laden, Startzeiten und Pretalx-`code` pro Titel-Match
-- `src/app/services/availability_service.py` – Gruppenlogik, Filter, Aggregation
-
-## Start
+## Lokal starten
 
 ```bash
-cd backend
-uv sync
+cd backend && uv sync
 PYTHONPATH=src uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-## API
+**API:** `GET /api/v1/availability`. OpenAPI nur mit `DOCS_ENABLED=true`, z. B. `http://127.0.0.1:8000/docs`.
 
-- OpenAPI: `http://127.0.0.1:8000/docs` (nur wenn **`DOCS_ENABLED=true`**)
-- Endpoint: `GET /api/v1/availability`
-- Antwort: Jeder Eintrag in `groups[].entries[]` kann **`pretalxCode`** enthalten (Pretalx-Session-`code`), wenn der Quoten-Name nach derselben Logik wie `sortAt` mit dem Schedule gematcht wird; sonst `null`.
+Eintraege koennen **`pretalxCode`** enthalten, wenn Quoten-Name und Schedule zusammenpassen; sonst `null`.
 
 ## Deployment
 
-Siehe Root-`README.md` Abschnitt „Produktion“ sowie [`deploy/systemd/`](../deploy/systemd/) und [`deploy/nginx/`](../deploy/nginx/).
+Siehe [README im Projektroot](../README.md) (Betrieb) und [`deploy/systemd/`](../deploy/systemd/), [`deploy/nginx/`](../deploy/nginx/).
 
-## Lint und Format
+## Lint
 
 ```bash
 cd backend && PYTHONPATH=src uv run ruff check src && uv run ruff format src
 ```
 
-Im Monorepo-Root: `pnpm run lint` und `pnpm run format` rufen das Frontend und ruff gemeinsam auf.
+Im Monorepo-Root: `pnpm run lint` / `pnpm run format` (Frontend + Backend).

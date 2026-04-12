@@ -2,6 +2,10 @@
 const DEFAULT_POLL_INTERVAL_MS = 55_000;
 export const MIN_POLL_INTERVAL_MS = 5_000;
 
+const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+const MIN_FETCH_TIMEOUT_MS = 5_000;
+const MAX_FETCH_TIMEOUT_MS = 120_000;
+
 const DEFAULT_TILES_COLS = 2;
 const DEFAULT_TILES_ROWS = 3;
 export const MIN_TILE_DIM = 1;
@@ -35,6 +39,16 @@ export function getPollIntervalMs(): number {
     import.meta.env.VITE_POLL_INTERVAL_MS,
     DEFAULT_POLL_INTERVAL_MS,
     MIN_POLL_INTERVAL_MS
+  );
+}
+
+/** Einzelabruf `fetch` zum Backend (ms, min. 5000, max. 120000). Standard 30000. */
+export function getFetchTimeoutMs(): number {
+  return parsePositiveIntEnv(
+    import.meta.env.VITE_FETCH_TIMEOUT_MS,
+    DEFAULT_FETCH_TIMEOUT_MS,
+    MIN_FETCH_TIMEOUT_MS,
+    MAX_FETCH_TIMEOUT_MS
   );
 }
 
