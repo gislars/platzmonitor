@@ -123,6 +123,9 @@ export function Dashboard() {
     return `Stand ${stand} · ${n} ${n === 1 ? "Gruppe" : "Gruppen"}`;
   }, [data, visibleGroups.length]);
 
+  const isFetchError =
+    error !== null && error.toLowerCase().includes("fetch");
+
   const eventTitle = (data?.event.title?.trim() || "FOSSGIS").trim();
 
   const rootClass = kiosk ? "dashboard dashboard--kiosk" : "dashboard";
@@ -163,7 +166,12 @@ export function Dashboard() {
               Bitte Help-Desk ansprechen.
             </span>
           </p>
-          <p className="dashboard__sub">{subline}</p>
+          <p className="dashboard__sub">
+            {subline}
+            {isFetchError ? (
+              <span className="dashboard__sub-hint"> · keine Verbindung</span>
+            ) : null}
+          </p>
         </div>
         <div className="dashboard__header-actions">
           {!kiosk ? (
@@ -180,13 +188,9 @@ export function Dashboard() {
         </p>
       )}
 
-      {error && (
+      {error && !isFetchError && (
         <p className="dashboard__state dashboard__state--error" role="alert">
-          {error.toLowerCase().includes("fetch")
-            ? import.meta.env.VITE_API_BASE_URL?.trim()
-              ? "API nicht erreichbar oder durch CORS blockiert. Auf dem Server in backend/.env z. B. FRONTEND_ORIGIN=http://127.0.0.1:5173,http://localhost:5173 setzen und Dienst neu starten."
-              : "Backend nicht erreichbar. Läuft Uvicorn auf Port 8000?"
-            : error}
+          {error}
         </p>
       )}
 
