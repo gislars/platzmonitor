@@ -11,11 +11,11 @@ User=www-data
 Group=www-data
 
 # Anpassen: absoluter Pfad zum backend/-Verzeichnis des geklonten Repos
-WorkingDirectory=/opt/buchungdashboard/backend
+WorkingDirectory=/opt/platzmonitor/backend
 
 Environment=PYTHONPATH=src
 # Laedt backend/.env (optional; Zeile mit - = Datei darf fehlen)
-EnvironmentFile=-/opt/buchungdashboard/backend/.env
+EnvironmentFile=-/opt/platzmonitor/backend/.env
 
 # Wie deploy/nginx location /backend/: Swagger UI muss /backend/openapi.json laden, nicht /openapi.json.
 # Nur FastAPI-ROOT_PATH (siehe app), nicht uvicorn --root-path (sonst stimmt path-Routing mit nginx-rewrite nicht).

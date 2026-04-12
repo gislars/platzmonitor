@@ -1,0 +1,29 @@
+[Unit]
+Description=FOSSGIS Platzmonitor Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Laeuft als der Benutzer, der systemctl --user ausfuehrt (kein User=/Group=)
+
+# Anpassen: absoluter Pfad zum backend/-Verzeichnis des geklonten Repos
+WorkingDirectory=/opt/platzmonitor/backend
+
+Environment=PYTHONPATH=src
+EnvironmentFile=-/opt/platzmonitor/backend/.env
+
+Environment=ROOT_PATH=/backend
+
+# Environment=PATH=/usr/local/bin:/usr/bin
+
+ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

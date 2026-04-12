@@ -1,4 +1,4 @@
-# FOSSGIS Buchungdashboard (Platzmonitor)
+# FOSSGIS Platzmonitor
 
 Schlanker Infoscreen fuer Veranstaltungen: Ein FastAPI Backend aggregiert Verfuegbarkeiten aus pretix, ein Vite React Frontend zeigt freie Plaetze fuer Gruppen wie Workshops und Exkursionen.
 
@@ -87,7 +87,9 @@ Betrieb ohne Docker: Backend mit **uv** und **systemd**, TLS und Routing mit **n
 
 1. Repo klonen oder aktualisieren, im `backend/`-Verzeichnis **`uv sync`**, **`cp .env.example .env`** und mindestens **`PRETIX_TOKEN`** setzen (Produktion: **`DOCS_ENABLED`** weglassen oder `false`, damit `/docs` nicht oeffentlich liegt).
 2. **Rate-Limit-Snippet** und **Site-Datei** aus [`deploy/nginx/`](deploy/nginx/) einbinden (siehe [`deploy/nginx/README.md`](deploy/nginx/README.md)), **`nginx -t`**, Zertifikat z. B. mit **certbot** (`certbot --nginx -d fossgis.mapwebbing.eu`), **`systemctl reload nginx`**.
-3. **systemd-Unit** aus [`deploy/systemd/`](deploy/systemd/) nach `/etc/systemd/system/` kopieren, darin **`WorkingDirectory`** und **`User`** an den Installationspfad anpassen, **`systemctl daemon-reload`**, **`systemctl enable --now fossgis-platzmonitor-backend.service`**.
+3. **Backend als systemd-Dienst** einrichten (siehe [`deploy/systemd/README.md`](deploy/systemd/README.md)):
+   - **System-Dienst**: Unit nach `/etc/systemd/system/` kopieren, **`WorkingDirectory`**, **`User`** und **`Group`** sowie ggf. **`EnvironmentFile`** setzen, dann `systemctl` (mit **`sudo`**) verwenden.
+   - **User-Dienst**: Vorlage `fossgis-platzmonitor-backend.user.service` nach `~/.config/systemd/user/` kopieren, Pfade anpassen, mit **`systemctl --user`** starten (kein `sudo` fuer Start/Stop; optional **`loginctl enable-linger`** fuer Start nach Reboot ohne Login).
 
 Details und Pfade: [`deploy/systemd/README.md`](deploy/systemd/README.md), [`deploy/nginx/README.md`](deploy/nginx/README.md).
 
