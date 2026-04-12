@@ -47,6 +47,16 @@ class Settings(BaseSettings):
         default=3600,
         alias="PRETALX_SCHEDULE_CACHE_SECONDS",
     )
+    availability_refresh_seconds: int = Field(
+        default=55,
+        ge=1,
+        le=86400,
+        alias="AVAILABILITY_REFRESH_SECONDS",
+        description=(
+            "Sekunden zwischen Hintergrund-Abrufen (pretix/pretalx); GET liefert nur den Snapshot. "
+            "Mehrere uvicorn-Worker: je Prozess eigener Abruf."
+        ),
+    )
 
     group_rules_json: str = Field(
         default="",

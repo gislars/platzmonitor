@@ -16,7 +16,8 @@ EnvironmentFile=-/opt/platzmonitor/backend/.env
 
 Environment=ROOT_PATH=/backend
 
-# Environment=PATH=/usr/local/bin:/usr/bin
+# User-Units haben kein Login-PATH; uv liegt oft unter ~/.local/bin (Installer, pip --user).
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 
 ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 Restart=on-failure
