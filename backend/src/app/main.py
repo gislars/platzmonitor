@@ -10,6 +10,7 @@ from app.loggers import get_logger
 from app.logging_config import configure_logging
 from app.logging_utils import safe_url_for_log
 from app.routes.availability import router as availability_router
+from app.routes.pretalx_public import router as pretalx_public_router
 from app.services.availability_cache import refresh_availability_snapshot
 from app.settings import get_settings
 
@@ -33,6 +34,8 @@ async def lifespan(app: FastAPI):
         settings.event,
     )
     log.info("pretalx_schedule=%s", safe_url_for_log(settings.pretalx_schedule_url))
+    log.info("pretalx_widget=%s", safe_url_for_log(settings.pretalx_widget_url))
+    log.info("schedule_print_path=%s", settings.schedule_print_path.strip() or "(leer)")
 
     stop = asyncio.Event()
     await asyncio.to_thread(refresh_availability_snapshot, settings)
@@ -90,3 +93,4 @@ elif _origins:
     )
 
 app.include_router(availability_router, prefix="/api/v1")
+app.include_router(pretalx_public_router, prefix="/api/v1")

@@ -14,7 +14,7 @@ WorkingDirectory=/opt/platzmonitor/backend
 Environment=PYTHONPATH=src
 EnvironmentFile=-/opt/platzmonitor/backend/.env
 
-Environment=ROOT_PATH=/backend
+Environment=ROOT_PATH=/event-api
 
 # User-Units haben kein Login-PATH; uv liegt oft unter ~/.local/bin (Installer, pip --user).
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin

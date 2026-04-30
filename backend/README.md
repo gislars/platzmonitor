@@ -1,41 +1,6 @@
 # Backend (FastAPI)
 
-Liest pretix (Items, Quotas, Warteliste), reichert mit pretalx-Schedule an, liefert JSON fuer das Frontend.
-
-## Konfiguration
-
-| | |
-|---|---|
-| Erste Schritte | `cp .env.example .env`, mindestens **`PRETIX_TOKEN`** |
-| Ausgehende Requests | optional **`HTTP_USER_AGENT`** (pretix und pretalx) |
-| **OpenAPI** (`/docs`) | Standard **aus**. Zum Einschalten: **`DOCS_ENABLED=true`**, Dienst neu starten |
-| Hinter URL-Praefix `/backend` | in der systemd-Unit **`ROOT_PATH=/backend`** setzen (siehe [`deploy/systemd/README.md`](../deploy/systemd/README.md)), nicht doppelt mit `uvicorn --root-path` kombinieren |
-| **App-Logs** | **`LOG_LEVEL`** (Standard INFO), **`LOG_FILE`** (leer: `/var/log/platzmonitor/app.log`). Rotation nur systemweit, siehe [`deploy/logrotate/platzmonitor`](../deploy/logrotate/platzmonitor) |
-
-### Logging
-
-- Logger unter dem Namensraum **`pm`** (z. B. `pm.main`, `pm.availability`). **`uvicorn`** schreibt weiter nach **stderr** (journalctl); die App-Logdatei enthaelt die Meldungen aus der Aggregationslogik.
-- Keine Secrets: kein `PRETIX_TOKEN`, keine URLs mit geheimen Query-Parametern in Meldungen.
-- Dieselbe erkennbare Ursache nicht an mehreren Stellen loggen (Refresh-Fehler im Cache-Layer, Erfolg nach Build in `availability_service`).
-
-### CORS (nur Multihost)
-
-Gleiche Origin wie das Frontend: kein CORS noetig. Sonst eine der Variablen:
-
-| Variable | Nutzen |
-|----------|--------|
-| `FRONTEND_ORIGIN` | Komma-separierte Liste, z. B. `https://a.example.org,https://b.example.org` |
-| `FRONTEND_ORIGIN_REGEX` | Viele Hosts (z. B. Raspberry Pi); **Vorrang** vor `FRONTEND_ORIGIN`, Regex eng halten |
-
-## Code
-
-| Pfad | Rolle |
-|------|--------|
-| `src/app/main.py` | App, CORS |
-| `src/app/routes/availability.py` | `GET /api/v1/availability` |
-| `src/app/pretix/client.py` | pretix REST |
-| `src/app/pretalx/schedule.py` | Schedule, Titel-Match |
-| `src/app/services/availability_service.py` | Gruppen, Aggregation |
+Liest Daten aus pretix (Items, Quotas, optional Warteliste) und liefert JSON für das Frontend. Optional gibt es zusätzliche Endpunkte für eine Event API (pretalx Proxy).
 
 ## Lokal starten
 
@@ -44,13 +9,49 @@ cd backend && uv sync
 PYTHONPATH=src uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-**API:** `GET /api/v1/availability`. OpenAPI nur mit `DOCS_ENABLED=true`, z. B. `http://127.0.0.1:8000/docs`.
+## Konfiguration
 
-Eintraege koennen **`pretalxCode`** enthalten, wenn Quoten-Name und Schedule zusammenpassen; sonst `null`.
+Startpunkt:
 
-## Deployment
+- `.env` aus Vorlage erstellen: `cp .env.example .env`
+- mindestens `PRETIX_TOKEN` setzen
 
-Siehe [README im Projektroot](../README.md) (Betrieb) und [`deploy/systemd/`](../deploy/systemd/), [`deploy/nginx/`](../deploy/nginx/).
+Weitere wichtige Variablen:
+
+- `HTTP_USER_AGENT` (optional, für pretix und pretalx)
+- `DOCS_ENABLED=true` (optional, OpenAPI unter `/docs`)
+
+Reverse Proxy und Pfad Präfix (z.B. `/event-api`) werden in der Deploy Doku beschrieben:
+
+- siehe [`deploy/README.md`](../deploy/README.md)
+
+### Logging
+
+- App Logger nutzt den Namensraum `pm`
+- keine Secrets loggen (z.B. `PRETIX_TOKEN`)
+- `LOG_LEVEL` steuert Detailgrad
+- `LOG_FILE` kann eine Datei aktivieren (leer bedeutet: kein App Logfile)
+
+### CORS (nur Multihost)
+
+Wenn Frontend und API nicht unter derselben Origin laufen, kann eine Origin Liste oder ein Regex gesetzt werden:
+
+- `FRONTEND_ORIGIN` (Komma separiert, z.B. `https://a.example.org,https://b.example.org`)
+- `FRONTEND_ORIGIN_REGEX` (hat Vorrang, Regex eng halten)
+
+## Endpunkte
+
+- `GET /api/v1/availability` (Platzmonitor)
+- optional zusätzliche Event API Endpunkte:
+  - `GET /api/v1/schedule`
+  - `GET /api/v1/widget-schedule`
+  - `GET /api/v1/schedule-print`
+
+## Tests
+
+```bash
+cd backend && uv sync --group dev && uv run pytest
+```
 
 ## Lint
 
@@ -58,4 +59,3 @@ Siehe [README im Projektroot](../README.md) (Betrieb) und [`deploy/systemd/`](..
 cd backend && PYTHONPATH=src uv run ruff check src && uv run ruff format src
 ```
 
-Im Monorepo-Root: `pnpm run lint` / `pnpm run format` (Frontend + Backend).

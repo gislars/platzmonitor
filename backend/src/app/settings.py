@@ -35,13 +35,23 @@ class Settings(BaseSettings):
         default="",
         alias="ROOT_PATH",
         description=(
-            "URL-Prefix hinter Reverse-Proxy (z. B. /backend), damit /docs die OpenAPI-URL "
+            "URL-Prefix hinter Reverse-Proxy (z. B. /event-api), damit /docs die OpenAPI-URL "
             "korrekt auflöst; leer wenn die App an der Domainwurzel hängt"
         ),
     )
     pretalx_schedule_url: str = Field(
         default="https://pretalx.com/fossgis2026/schedule/export/schedule.json",
         alias="PRETALX_SCHEDULE_URL",
+    )
+    pretalx_widget_url: str = Field(
+        default="",
+        alias="PRETALX_WIDGET_URL",
+        description="Pretalx Widget-JSON URL; leer liefert 404 auf /api/v1/widget-schedule",
+    )
+    schedule_print_path: str = Field(
+        default="",
+        alias="SCHEDULE_PRINT_PATH",
+        description="Pfad zur Druck-JSON fuer schedule-print; leer liefert 404",
     )
     pretalx_schedule_cache_seconds: int = Field(
         default=3600,

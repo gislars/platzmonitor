@@ -1,0 +1,12 @@
+/**
+ * Beispiel fuer FossgisFahrplanEventConfig im Abfahrtsmonitor-Fork (britiger/fossgis-abfahrtsmonitor).
+ * Basis-URL anpassen (z. B. https://fossgis.mapwebbing.eu/event-api).
+ * Diese Datei ist keine Laufzeitkonfiguration des Platzmonitor-Repos; Inhalt in config.js des Forks uebernehmen.
+ */
+window.FossgisFahrplanEventConfig = {
+  scheduleUrl: "https://fossgis.mapwebbing.eu/event-api/api/v1/schedule",
+  scheduleUrlPrint: "https://fossgis.mapwebbing.eu/event-api/api/v1/schedule-print",
+  widgetScheduleUrl: "https://fossgis.mapwebbing.eu/event-api/api/v1/widget-schedule",
+  freeSeatsUrl: "https://fossgis.mapwebbing.eu/event-api/api/v1/availability",
+  // trackMap, abbreviateRoom, ... (wie im Fork)
+};
