@@ -8,7 +8,7 @@ Infoscreen für Veranstaltungen. Das Backend liest Verfügbarkeiten aus pretix, 
 - Optional Wartelistenanzahl 
 - Kiosk Modus, helles und dunkles Theme
 
-## Ueberblick
+## Überblick
 
 Das Projekt besteht aus zwei Teilen:
 

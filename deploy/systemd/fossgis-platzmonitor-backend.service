@@ -6,16 +6,16 @@ Wants=network-online.target
 [Service]
 Type=simple
 
-# Anpassen: Unix-User, der den Dienst ausfuehrt (Besitzer von WorkingDirectory und .env)
-User=www-data
-Group=www-data
+# Optional: fuer Systemdienst setzen. Fuer User Dienst muessen diese Zeilen entfernt bleiben.
+# User=www-data
+# Group=www-data
 
 # Anpassen: absoluter Pfad zum backend/-Verzeichnis des geklonten Repos
-WorkingDirectory=/opt/platzmonitor/backend
+WorkingDirectory=/path/to/platzmonitor/backend
 
 Environment=PYTHONPATH=src
 # Laedt backend/.env (optional; Zeile mit - = Datei darf fehlen)
-EnvironmentFile=-/opt/platzmonitor/backend/.env
+EnvironmentFile=-/path/to/platzmonitor/backend/.env
 
 # Wie deploy/nginx location /event-api/: Swagger UI muss /event-api/openapi.json laden, nicht /openapi.json.
 # Nur FastAPI-ROOT_PATH (siehe app), nicht uvicorn --root-path (sonst stimmt path-Routing mit nginx-rewrite nicht).
