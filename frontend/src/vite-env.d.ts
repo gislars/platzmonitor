@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   /** Optional: anderes API-Backend. Wenn gesetzt, wird PATH relativ zu dieser Base gebaut. */
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_POLL_INTERVAL_MS?: string;
+  readonly VITE_FETCH_TIMEOUT_MS?: string;
   readonly VITE_TILES_COLS?: string;
   readonly VITE_TILES_ROWS?: string;
   readonly VITE_PAGE_ROTATION_MS?: string;
