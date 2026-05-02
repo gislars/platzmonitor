@@ -312,16 +312,10 @@ export function LineChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const formatTickX = formatXTick ?? formatX;
   const [pinnedSeriesId, setPinnedSeriesId] = useState<string | null>(null);
-
-  /** Auswahl löschen wenn die Serie beim Datenwechsel fehlt. */
-  useEffect(() => {
-    if (pinnedSeriesId === null) {
-      return;
-    }
-    if (!series.some((s) => s.id === pinnedSeriesId)) {
-      setPinnedSeriesId(null);
-    }
-  }, [series, pinnedSeriesId]);
+  const effectivePinnedSeriesId =
+    pinnedSeriesId !== null && series.some((s) => s.id === pinnedSeriesId)
+      ? pinnedSeriesId
+      : null;
 
   const [hover, setHover] = useState<{
     seriesId: string;
@@ -445,30 +439,30 @@ export function LineChart({
     setHover(
       formatHoverBody !== undefined
         ? {
-            seriesId: hit.s.id,
-            label: hit.s.label,
-            color: hit.s.color,
-            bodyLine: formatHoverBody(hit.xData, hit.yData),
-            hx: hit.px,
-            hy: hit.py,
-            dockLeftPct,
-          }
+          seriesId: hit.s.id,
+          label: hit.s.label,
+          color: hit.s.color,
+          bodyLine: formatHoverBody(hit.xData, hit.yData),
+          hx: hit.px,
+          hy: hit.py,
+          dockLeftPct,
+        }
         : {
-            seriesId: hit.s.id,
-            label: hit.s.label,
-            color: hit.s.color,
-            fx: formatX(hit.xData),
-            fy: formatY(hit.yData),
-            hx: hit.px,
-            hy: hit.py,
-            dockLeftPct,
-          }
+          seriesId: hit.s.id,
+          label: hit.s.label,
+          color: hit.s.color,
+          fx: formatX(hit.xData),
+          fy: formatY(hit.yData),
+          hx: hit.px,
+          hy: hit.py,
+          dockLeftPct,
+        }
     );
   }
 
   function hitForPointer(mx: number, my: number, maxDy: number, restrictToPinned: boolean) {
     const candidates = restrictToPinned
-      ? hoverableSeries(series).filter((s) => s.id === pinnedSeriesId)
+      ? hoverableSeries(series).filter((s) => s.id === effectivePinnedSeriesId)
       : hoverableSeries(series);
     if (candidates.length === 0) {
       return null;
@@ -498,10 +492,10 @@ export function LineChart({
     const { x: mx, y: my } = clientToSvgPx(svg, e.clientX, e.clientY);
 
     const maxDy =
-      selectableSeries && pinnedSeriesId !== null
+      selectableSeries && effectivePinnedSeriesId !== null
         ? Number.POSITIVE_INFINITY
         : hoverSnapMaxDySvg;
-    const hit = hitForPointer(mx, my, maxDy, Boolean(selectableSeries && pinnedSeriesId !== null));
+    const hit = hitForPointer(mx, my, maxDy, Boolean(selectableSeries && effectivePinnedSeriesId !== null));
     if (hit === null) {
       setHover(null);
       return;
@@ -539,213 +533,213 @@ export function LineChart({
   return (
     <div className="line-chart-wrap">
       <div className="line-chart-plot">
-      <svg
-        ref={svgRef}
-        className="line-chart"
-        viewBox={`0 0 ${String(width)} ${String(height)}`}
-        width="100%"
-        preserveAspectRatio="xMidYMid meet"
-        style={{ aspectRatio: `${String(width)} / ${String(height)}` }}
-        role="img"
-        aria-label={svgAriaLabel}
-      >
-        <defs>
-          <clipPath id={xAxisCaptionClipId}>
-            <rect
-              x={padL}
-              y={height - padB - 4}
-              width={innerW + padR}
-              height={padB + 8}
-            />
-          </clipPath>
-        </defs>
-        {yTickVals.map((yVal, yi) => {
-          const yPx = yScale(yVal);
-          return (
-            <g key={`h-${String(yi)}`}>
-              <line
-                className="line-chart__grid"
-                x1={padL}
-                x2={width - padR}
-                y1={yPx}
-                y2={yPx}
+        <svg
+          ref={svgRef}
+          className="line-chart"
+          viewBox={`0 0 ${String(width)} ${String(height)}`}
+          width="100%"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ aspectRatio: `${String(width)} / ${String(height)}` }}
+          role="img"
+          aria-label={svgAriaLabel}
+        >
+          <defs>
+            <clipPath id={xAxisCaptionClipId}>
+              <rect
+                x={padL}
+                y={height - padB - 4}
+                width={innerW + padR}
+                height={padB + 8}
               />
-            </g>
-          );
-        })}
+            </clipPath>
+          </defs>
+          {yTickVals.map((yVal, yi) => {
+            const yPx = yScale(yVal);
+            return (
+              <g key={`h-${String(yi)}`}>
+                <line
+                  className="line-chart__grid"
+                  x1={padL}
+                  x2={width - padR}
+                  y1={yPx}
+                  y2={yPx}
+                />
+              </g>
+            );
+          })}
 
-        {xTickVals.map((xv, vi) => {
-          const xPx = xScale(xv);
-          return (
-            <line
-              key={`v-${String(vi)}`}
-              className="line-chart__grid line-chart__grid--vert"
-              x1={xPx}
-              x2={xPx}
-              y1={padT}
-              y2={padT + innerH}
-            />
-          );
-        })}
+          {xTickVals.map((xv, vi) => {
+            const xPx = xScale(xv);
+            return (
+              <line
+                key={`v-${String(vi)}`}
+                className="line-chart__grid line-chart__grid--vert"
+                x1={xPx}
+                x2={xPx}
+                y1={padT}
+                y2={padT + innerH}
+              />
+            );
+          })}
 
-        <rect
-          className={selectableSeries ? 'line-chart__hit line-chart__hit--selectable' : 'line-chart__hit'}
-          x={padL}
-          y={padT}
-          width={innerW}
-          height={innerH}
-          fill="transparent"
-          pointerEvents="all"
-          style={{
-            cursor: hover !== null || (selectableSeries && pinnedSeriesId !== null) ? 'crosshair' : 'default',
-            touchAction: selectableSeries ? 'none' : undefined,
-          }}
-          onPointerDown={onOverlayPointerDown}
-          onMouseMove={onOverlayMove}
-          onMouseLeave={clearHover}
-        />
+          <rect
+            className={selectableSeries ? 'line-chart__hit line-chart__hit--selectable' : 'line-chart__hit'}
+            x={padL}
+            y={padT}
+            width={innerW}
+            height={innerH}
+            fill="transparent"
+            pointerEvents="all"
+            style={{
+              cursor: hover !== null || (selectableSeries && effectivePinnedSeriesId !== null) ? 'crosshair' : 'default',
+              touchAction: selectableSeries ? 'none' : undefined,
+            }}
+            onPointerDown={onOverlayPointerDown}
+            onMouseMove={onOverlayMove}
+            onMouseLeave={clearHover}
+          />
 
-        {(() => {
-          const focusId = hover?.seriesId ?? pinnedSeriesId;
-          const sorted =
-            focusId !== null
-              ? [...series].sort((a, b) => {
+          {(() => {
+            const focusId = hover?.seriesId ?? effectivePinnedSeriesId;
+            const sorted =
+              focusId !== null
+                ? [...series].sort((a, b) => {
                   const af = a.id === focusId ? 1 : 0;
                   const bf = b.id === focusId ? 1 : 0;
                   return af - bf;
                 })
-              : series;
-          return sorted;
-        })().map((s) => {
-          if (s.points.length === 0) {
-            return null;
-          }
-          const pts = s.points.map((p) => `${String(xScale(p.x))},${String(yScale(p.y))}`).join(' ');
-          const d = `M ${pts}`;
-          const baseSw = s.emphasize ? 3.2 : 1.7;
-          const focusId = hover?.seriesId ?? pinnedSeriesId;
-          const isHit = focusId !== null && s.id === focusId;
-          const isDimmed = focusId !== null && !isHit;
-          const sw = isHit ? baseSw + 1.75 : baseSw;
-          const opacity =
-            (isDimmed ? 0.22 : isHit ? 1 : 0.95) * (s.strokeOpacity ?? 1);
-          return (
-            <path
-              key={s.id}
-              d={d}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={sw}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              strokeDasharray={s.dashed ? '5 6' : undefined}
-              opacity={opacity}
-            />
-          );
-        })}
+                : series;
+            return sorted;
+          })().map((s) => {
+            if (s.points.length === 0) {
+              return null;
+            }
+            const pts = s.points.map((p) => `${String(xScale(p.x))},${String(yScale(p.y))}`).join(' ');
+            const d = `M ${pts}`;
+            const baseSw = s.emphasize ? 3.2 : 1.7;
+            const focusId = hover?.seriesId ?? effectivePinnedSeriesId;
+            const isHit = focusId !== null && s.id === focusId;
+            const isDimmed = focusId !== null && !isHit;
+            const sw = isHit ? baseSw + 1.75 : baseSw;
+            const opacity =
+              (isDimmed ? 0.22 : isHit ? 1 : 0.95) * (s.strokeOpacity ?? 1);
+            return (
+              <path
+                key={s.id}
+                d={d}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={sw}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                strokeDasharray={s.dashed ? '5 6' : undefined}
+                opacity={opacity}
+              />
+            );
+          })}
 
-        {yTickVals.map((yVal, yi) => {
-          const yPx = yScale(yVal);
-          return (
-            <text
-              key={`yt-${String(yi)}`}
-              className="line-chart__tick"
-              x={padL - 8}
-              y={yPx + 4}
-              textAnchor="end"
-              fontSize="11"
-            >
-              {formatY(yVal)}
-            </text>
-          );
-        })}
-
-        <g clipPath={`url(#${xAxisCaptionClipId})`}>
-          {xTickVals.map((xv, ti) => {
-            const tx = xScale(xv);
+          {yTickVals.map((yVal, yi) => {
+            const yPx = yScale(yVal);
             return (
               <text
-                key={`xt-${String(ti)}`}
+                key={`yt-${String(yi)}`}
                 className="line-chart__tick"
-                x={tx}
-                y={height - 28}
-                textAnchor="middle"
+                x={padL - 8}
+                y={yPx + 4}
+                textAnchor="end"
                 fontSize="11"
               >
-                {formatTickX(xv)}
+                {formatY(yVal)}
               </text>
             );
           })}
 
-          {xLabel !== undefined ? (
+          <g clipPath={`url(#${xAxisCaptionClipId})`}>
+            {xTickVals.map((xv, ti) => {
+              const tx = xScale(xv);
+              return (
+                <text
+                  key={`xt-${String(ti)}`}
+                  className="line-chart__tick"
+                  x={tx}
+                  y={height - 28}
+                  textAnchor="middle"
+                  fontSize="11"
+                >
+                  {formatTickX(xv)}
+                </text>
+              );
+            })}
+
+            {xLabel !== undefined ? (
+              <text
+                className="line-chart__label line-chart__label--axis"
+                x={padL + innerW / 2}
+                y={height - 10}
+                textAnchor="middle"
+                fontSize="12"
+                fill="currentColor"
+              >
+                {xLabel}
+              </text>
+            ) : null}
+          </g>
+
+          {yLabel !== undefined ? (
             <text
               className="line-chart__label line-chart__label--axis"
-              x={padL + innerW / 2}
-              y={height - 10}
+              x={14}
+              y={padT + innerH / 2}
               textAnchor="middle"
               fontSize="12"
               fill="currentColor"
+              transform={`rotate(-90 14 ${String(padT + innerH / 2)})`}
             >
-              {xLabel}
+              {yLabel}
             </text>
           ) : null}
-        </g>
 
-        {yLabel !== undefined ? (
-          <text
-            className="line-chart__label line-chart__label--axis"
-            x={14}
-            y={padT + innerH / 2}
-            textAnchor="middle"
-            fontSize="12"
-            fill="currentColor"
-            transform={`rotate(-90 14 ${String(padT + innerH / 2)})`}
+          {hover !== null ? (
+            <line
+              className="line-chart__vline"
+              x1={hover.hx}
+              x2={hover.hx}
+              y1={padT}
+              y2={padT + innerH}
+            />
+          ) : null}
+          {hover !== null ? (
+            <circle cx={hover.hx} cy={hover.hy} r={6} fill={hover.color} opacity={0.35} stroke="none" />
+          ) : null}
+          {hover !== null ? (
+            <circle
+              cx={hover.hx}
+              cy={hover.hy}
+              r={4}
+              fill="var(--surface, #fff)"
+              stroke={hover.color}
+              strokeWidth={2}
+            />
+          ) : null}
+        </svg>
+
+        {hover !== null ? (
+          <div
+            className="line-chart__tooltip line-chart__tooltip--dock"
+            role="status"
+            style={{ left: `${String(hover.dockLeftPct)}%` }}
           >
-            {yLabel}
-          </text>
+            <div className="line-chart__tooltip-title">{hover.label}</div>
+            {hover.bodyLine !== undefined ? (
+              <div>{hover.bodyLine}</div>
+            ) : (
+              <>
+                <div>x: {hover.fx ?? ''}</div>
+                <div>y: {hover.fy ?? ''}</div>
+              </>
+            )}
+          </div>
         ) : null}
-
-        {hover !== null ? (
-          <line
-            className="line-chart__vline"
-            x1={hover.hx}
-            x2={hover.hx}
-            y1={padT}
-            y2={padT + innerH}
-          />
-        ) : null}
-        {hover !== null ? (
-          <circle cx={hover.hx} cy={hover.hy} r={6} fill={hover.color} opacity={0.35} stroke="none" />
-        ) : null}
-        {hover !== null ? (
-          <circle
-            cx={hover.hx}
-            cy={hover.hy}
-            r={4}
-            fill="var(--surface, #fff)"
-            stroke={hover.color}
-            strokeWidth={2}
-          />
-        ) : null}
-      </svg>
-
-      {hover !== null ? (
-        <div
-          className="line-chart__tooltip line-chart__tooltip--dock"
-          role="status"
-          style={{ left: `${String(hover.dockLeftPct)}%` }}
-        >
-          <div className="line-chart__tooltip-title">{hover.label}</div>
-          {hover.bodyLine !== undefined ? (
-            <div>{hover.bodyLine}</div>
-          ) : (
-            <>
-              <div>x: {hover.fx ?? ''}</div>
-              <div>y: {hover.fy ?? ''}</div>
-            </>
-          )}
-        </div>
-      ) : null}
       </div>
     </div>
   );

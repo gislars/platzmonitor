@@ -361,7 +361,9 @@ def read_latest_cumulative(settings: Settings, quota_ids: list[str]) -> dict[str
     return out
 
 
-def attach_latest_bookings_to_snapshot(settings: Settings, snapshot: AvailabilityResponse) -> AvailabilityResponse:
+def attach_latest_bookings_to_snapshot(
+    settings: Settings, snapshot: AvailabilityResponse
+) -> AvailabilityResponse:
     """Reichert unlimited-Quota-Einträge mit dem letzten timeline-Kumulativ an (Balkendiagramm)."""
     quota_ids = [
         e.id
