@@ -44,8 +44,35 @@ def refresh_availability_snapshot(settings: Settings) -> None:
         with _lock:
             _last_error = "Unerwarteter Fehler beim Aktualisieren der Verfügbarkeit"
         return
+
+    client_snapshot = data
+
+    try:
+        from app.services.history_store import record_snapshot
+
+        record_snapshot(data, settings)
+    except Exception:
+        logger.warning(
+            "availability: history_store record_snapshot failed (non-fatal)",
+            exc_info=True,
+        )
+
+    try:
+        from app.services.booking_timeline import (
+            attach_latest_bookings_to_snapshot,
+            try_refresh_after_snapshot,
+        )
+
+        try_refresh_after_snapshot(settings, snapshot=data)
+        client_snapshot = attach_latest_bookings_to_snapshot(settings, data)
+    except Exception:
+        logger.warning(
+            "availability: booking_timeline refresh failed (non-fatal)",
+            exc_info=True,
+        )
+
     with _lock:
-        _snapshot = data
+        _snapshot = client_snapshot
         _last_error = None
 
 

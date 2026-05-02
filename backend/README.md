@@ -6,8 +6,10 @@ Liest Daten aus pretix (Items, Quotas, optional Warteliste) und liefert JSON fü
 
 ```bash
 cd backend && uv sync
-PYTHONPATH=src uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+PYTHONPATH=src uv run python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+
+Hinweis: `uv run uvicorn` kann auf ein anderes `uvicorn` im `PATH` (z. B. `~/.local/bin`) zeigen. `python -m uvicorn` nutzt immer die Abhängigkeiten dieses Projekts.
 
 ## Konfiguration
 
@@ -41,11 +43,23 @@ Wenn Frontend und API nicht unter derselben Origin laufen, kann eine Origin List
 
 ## Endpunkte
 
-- `GET /api/v1/availability` (Platzmonitor)
-- optional zusätzliche Event API Endpunkte:
-  - `GET /api/v1/schedule`
-  - `GET /api/v1/widget-schedule`
-  - `GET /api/v1/schedule-print`
+**Platzmonitor**
+
+- `GET /api/v1/availability` (pretix-Verfügbarkeit für Kacheln und Statistik Balken)
+
+**Statistik / Datenhaltung (Auszug)**
+
+- `GET /api/v1/history` (bucketweise Zeitreihen aus `HISTORY_DB_PATH`, optional gefiltert)
+- `GET /api/v1/booking-timeline` (kumulative Buchungen aus Transaktions-Aggregation, SQLite)
+- `GET /api/v1/registrations` (jahresweise Anmelde-Aggregate, SQLite)
+
+Zu optionalen Datenbank Pfaden siehe `.env.example` (`HISTORY_*`, `BOOKING_TIMELINE_*`, `REGISTRATIONS_*`).
+
+**Optional Event API / pretalx**
+
+- `GET /api/v1/schedule`
+- `GET /api/v1/widget-schedule`
+- `GET /api/v1/schedule-print`
 
 ## Tests
 

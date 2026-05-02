@@ -62,6 +62,14 @@ class Entry(BaseModel):
         serialization_alias="waitingListCount",
         description="Aktive Wartende (ohne Gutschein); null wenn Abruf fehlgeschlagen",
     )
+    transaction_booked: int | None = Field(
+        default=None,
+        serialization_alias="transactionBooked",
+        description=(
+            "Kumulative Buchungen aus Transaktions-Timeline (pretix); "
+            "nur bei Kapazität unlimited gesetzt wenn Wert bekannt"
+        ),
+    )
 
 
 class Group(BaseModel):
@@ -85,3 +93,85 @@ class ErrorBody(BaseModel):
 
     error: str
     message: str
+
+
+class HistoryPoint(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    t: int = Field(description="Bucket start as Unix epoch seconds (UTC)")
+    booked: int | None = None
+    total: int | None = None
+    waiting: int | None = None
+    free: int | None = None
+
+
+class HistorySeries(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    quota_id: str = Field(serialization_alias="quotaId")
+    points: list[HistoryPoint]
+
+
+class HistoryResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fetched_at: datetime = Field(serialization_alias="fetchedAt")
+    bucket_seconds: int = Field(serialization_alias="bucketSeconds")
+    recording_started_at: int | None = Field(
+        default=None,
+        serialization_alias="recordingStartedAt",
+        description="Unix epoch seconds first stored bucket, wenn bekannt",
+    )
+    series: list[HistorySeries]
+
+
+class BookingTimelinePoint(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    t: int = Field(description="UTC Tagesbeginn Unix-Sekunden (Kalenderbucket)")
+    booked: int
+
+
+class BookingTimelineSeries(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    quota_id: str = Field(serialization_alias="quotaId")
+    points: list[BookingTimelinePoint]
+
+
+class BookingTimelineResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fetched_at: datetime = Field(serialization_alias="fetchedAt")
+    granularity: str = Field(default="daily_utc")
+    source: str = Field(default="pretix_transactions")
+    series: list[BookingTimelineSeries]
+
+
+class RegistrationsPoint(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    date: str = Field(description="YYYY-MM-DD snapshot day")
+    weeks_before: float = Field(serialization_alias="weeksBefore")
+    online: int
+    onsite: int | None = Field(
+        default=None,
+        description="null wenn keine getrennte Onsite-Zählung gespeichert",
+    )
+
+
+class RegistrationsEvent(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    slug: str
+    label: str
+    start_date: str = Field(serialization_alias="startDate")
+    points: list[RegistrationsPoint]
+
+
+class RegistrationsResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fetched_at: datetime = Field(serialization_alias="fetchedAt")
+    emphasized_event_slug: str = Field(serialization_alias="emphasizedEventSlug")
+    events: list[RegistrationsEvent]

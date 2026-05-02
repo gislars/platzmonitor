@@ -25,6 +25,23 @@
   --primary-btn-fg: #ffffff;
   --primary-btn-hover-bg: #c96a00;
   --indicator-track: #e0d5c8;
+  /* Buchungsliste Workshop/Exkursion: nur CI-Orange und Abstufungen */
+  --booking-bar-rail: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  --booking-bar-booked: var(--accent);
+  --booking-bar-free: color-mix(in srgb, var(--accent) 30%, var(--surface-2));
+  /* Kein Mix mit --text: sonst wird der Balken sehr dunkel und --text auf dem Balken fast unleserlich */
+  --booking-bar-wait: color-mix(in srgb, var(--accent) 55%, var(--surface-2));
+  /* Diagramme / Balken (Okabe-Ito-inspiriert); Hervorhebung = CI-Orange */
+  --chart-emphasis: var(--accent);
+  --chart-wait: #cc79a7;
+  --chart-cb-0: #e69f00;
+  --chart-cb-1: #009e73;
+  --chart-cb-2: #d55e00;
+  --chart-cb-3: #1177bb;
+  --chart-cb-4: #000000;
+  --chart-cb-5: #56b4e9;
+  --chart-cb-6: #b59f00;
+  --chart-cb-7: #332288;
 }
 
 [data-theme="fossgis-dark"] {
@@ -49,4 +66,20 @@
   --primary-btn-fg: #ffffff;
   --primary-btn-hover-bg: #c96a00;
   --indicator-track: #3d434d;
+  /* Buchungsliste: Orange-Abstufungen (dunkles Theme) */
+  --booking-bar-rail: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  --booking-bar-booked: var(--accent);
+  --booking-bar-free: color-mix(in srgb, var(--accent) 36%, var(--surface-2));
+  --booking-bar-wait: color-mix(in srgb, var(--accent) 58%, var(--surface));
+  /* Diagramme: Hervorhebung = CI-Orange (auf dunklem Grund lesbar) */
+  --chart-emphasis: var(--accent);
+  --chart-wait: #e598d1;
+  --chart-cb-0: #f0b429;
+  --chart-cb-1: #3ddc9c;
+  --chart-cb-2: #ff8f6b;
+  --chart-cb-3: #5ba3d9;
+  --chart-cb-4: #e8eaed;
+  --chart-cb-5: #89cff0;
+  --chart-cb-6: #e8dc6a;
+  --chart-cb-7: #a78bcc;
 }

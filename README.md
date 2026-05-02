@@ -5,7 +5,8 @@ Infoscreen für Veranstaltungen. Das Backend liest Verfügbarkeiten aus pretix, 
 ## Features
 
 - Anzeige freier Plätze pro Gruppe (aus pretix Quoten)
-- Optional Wartelistenanzahl 
+- Optional Wartelistenanzahl
+- **Statistikmodus:** Begleitprogramm (Balken aus Verfügbarkeit), Anmeldungsdiagramme (aggregierte Daten), optional Buchungsdetail mit Transaktions-Timeline (`/booking-timeline`)
 - Kiosk Modus, helles und dunkles Theme
 
 ## Überblick

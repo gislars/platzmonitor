@@ -19,3 +19,14 @@ export function sortEntriesByDateTimeAsc(entries: Entry[]): Entry[] {
     return a.id.localeCompare(b.id);
   });
 }
+
+/** Aufsteigend nach angezeigtem Titel (`label`). Deutsche Sortierung; bei Gleichheit stabil über `id`. */
+export function sortEntriesByLabelAsc(entries: Entry[]): Entry[] {
+  return [...entries].sort((a, b) => {
+    const cmp = a.label.localeCompare(b.label, "de", { sensitivity: "base" });
+    if (cmp !== 0) {
+      return cmp;
+    }
+    return a.id.localeCompare(b.id);
+  });
+}

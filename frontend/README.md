@@ -1,6 +1,11 @@
 # Frontend (Vite, React, TypeScript)
 
-Infoscreen-UI; Daten per `GET /api/v1/availability`.
+Infoscreen-UI. Daten kommen vom Platzmonitor Backend (bei Dev leitet Vite **`/api/*`** zum lokalen FastAPI weiter, siehe `vite.config.ts`). Genutzt werden u. a.:
+
+- `GET /api/v1/availability` (Kachelmodus und Statistik-Begleitprogramm)
+- `GET /api/v1/registrations` (Statistik Tab Anmeldungen)
+- `GET /api/v1/booking-timeline` (Detaildialog zu einer Quota)
+- optional `GET /api/v1/history` (Zeitreihe aus der History-Datenbank; derzeit kein periodischer Abruf im UI, API bleibt für Skripte und Erweiterungen in `api.ts`)
 
 ## Befehle
 
@@ -22,7 +27,7 @@ Kopie von [`.env.example`](./.env.example) nach `.env`; alle Optionen sind dort 
 
 | Situation | `VITE_API_BASE_URL` |
 |-----------|---------------------|
-| Standard (Dev) | leer: Anfragen an `/api/v1/availability` (Vite-Proxy) |
+| Standard (Dev) | leer: Anfragen an `/api/...` werden per Vite zum Backend (`127.0.0.1:8000`) weitergeleitet |
 | Anderer Host | z. B. `https://api.example.org` (CORS im Backend, siehe [`backend/README.md`](../backend/README.md)) |
 | Gleicher Host, API unter Präfix `/event-api` | z. B. `https://example.org/event-api`  |
 

@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   /** Optional: anderes API-Backend. Wenn gesetzt, wird PATH relativ zu dieser Base gebaut. */
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_POLL_INTERVAL_MS?: string;
+  readonly VITE_FETCH_TIMEOUT_MS?: string;
   readonly VITE_TILES_COLS?: string;
   readonly VITE_TILES_ROWS?: string;
   readonly VITE_PAGE_ROTATION_MS?: string;
@@ -14,6 +15,11 @@ interface ImportMetaEnv {
   readonly VITE_HIDE_SOLD_OUT_ENTRIES?: string;
   readonly VITE_HIDE_PAST_ENTRIES?: string;
   readonly VITE_DEFAULT_THEME?: string;
+  readonly VITE_DEFAULT_VIEW_MODE?: string;
+  readonly VITE_DEFAULT_STATS_TAB?: string;
+  readonly VITE_REGISTRATIONS_POLL_MS?: string;
+  /** Dev: positive Zahl = Warteliste an erstem endlichen Eintrag simulieren (Balken, Kacheln) */
+  readonly VITE_SIMULATE_WAITLIST?: string;
 }
 
 interface ImportMeta {
