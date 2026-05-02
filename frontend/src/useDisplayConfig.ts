@@ -1,13 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  getBuildKioskDefault,
   getDefaultGroupRotationMode,
   getDefaultHideEmptyGroups,
   getDefaultHidePastEntries,
   getDefaultHideSoldOutEntries,
   getDefaultMaxGroupColumns,
   getDefaultPageRotationMs,
+  getDefaultStatisticsTab,
   getDefaultTilesCols,
   getDefaultTilesRows,
+  getDefaultViewMode,
   getPollIntervalMs,
   MAX_MAX_GROUP_COLUMNS,
   MAX_TILE_DIM,
@@ -16,6 +19,8 @@ import {
   MIN_POLL_INTERVAL_MS,
   MIN_TILE_DIM,
   type GroupRotationMode,
+  type StatisticsTab,
+  type ViewMode,
 } from "./config";
 import {
   applyThemeToDocument,
@@ -35,6 +40,9 @@ const LS_GROUP_ROTATION_MODE = "fossgis-platzmonitor.groupRotationMode";
 const LS_HIDE_EMPTY = "fossgis-platzmonitor.hideEmptyGroups";
 const LS_HIDE_SOLD_OUT = "fossgis-platzmonitor.hideSoldOutEntries";
 const LS_HIDE_PAST = "fossgis-platzmonitor.hidePastEntries";
+const LS_VIEW_MODE = "fossgis-platzmonitor.viewMode";
+const LS_STATS_TAB = "fossgis-platzmonitor.statisticsTab";
+const LS_STATS_TAB_AUTOROTATE = "fossgis-platzmonitor.statsTabAutoRotate";
 
 function readLsInt(key: string, fallback: number): number {
   try {
@@ -60,6 +68,36 @@ function readLsBool(key: string, fallback: boolean): boolean {
     }
     if (raw === "0" || raw.toLowerCase() === "false") {
       return false;
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readLsStatisticsTab(key: string, fallback: StatisticsTab): StatisticsTab {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === "registrations") {
+      return "registrations";
+    }
+    if (raw === "workshops") {
+      return "workshops";
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readLsViewMode(key: string, fallback: ViewMode): ViewMode {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === "statistics") {
+      return "statistics";
+    }
+    if (raw === "tiles") {
+      return "tiles";
     }
     return fallback;
   } catch {
@@ -99,6 +137,9 @@ export function useDisplayConfig() {
       hideSoldOutEntries: getDefaultHideSoldOutEntries(),
       hidePastEntries: getDefaultHidePastEntries(),
       themeId: getDefaultThemeIdFromEnv(),
+      viewMode: getDefaultViewMode(),
+      statisticsTab: getDefaultStatisticsTab(),
+      statsTabAutoRotate: getBuildKioskDefault(),
     }),
     []
   );
@@ -135,6 +176,16 @@ export function useDisplayConfig() {
     readLsBool(LS_HIDE_PAST, defaults.hidePastEntries)
   );
   const [themeId, setThemeIdState] = useState<ThemeId>(() => getInitialThemeId());
+
+  const [viewMode, setViewModeState] = useState<ViewMode>(() =>
+    readLsViewMode(LS_VIEW_MODE, defaults.viewMode)
+  );
+  const [statisticsTab, setStatisticsTabState] = useState<StatisticsTab>(() =>
+    readLsStatisticsTab(LS_STATS_TAB, defaults.statisticsTab)
+  );
+  const [statsTabAutoRotate, setStatsTabAutoRotateState] = useState(() =>
+    readLsBool(LS_STATS_TAB_AUTOROTATE, defaults.statsTabAutoRotate)
+  );
 
   const setCols = useCallback((n: number) => {
     const v = clampInt(n, MIN_TILE_DIM, MAX_TILE_DIM);
@@ -228,6 +279,33 @@ export function useDisplayConfig() {
     persistThemeId(id);
   }, []);
 
+  const setViewMode = useCallback((m: ViewMode) => {
+    setViewModeState(m);
+    try {
+      localStorage.setItem(LS_VIEW_MODE, m);
+    } catch {
+      /* Fehler ignorieren */
+    }
+  }, []);
+
+  const setStatisticsTab = useCallback((t: StatisticsTab) => {
+    setStatisticsTabState(t);
+    try {
+      localStorage.setItem(LS_STATS_TAB, t);
+    } catch {
+      /* Fehler ignorieren */
+    }
+  }, []);
+
+  const setStatsTabAutoRotate = useCallback((v: boolean) => {
+    setStatsTabAutoRotateState(v);
+    try {
+      localStorage.setItem(LS_STATS_TAB_AUTOROTATE, v ? "1" : "0");
+    } catch {
+      /* Fehler ignorieren */
+    }
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     setColsState(defaults.cols);
     setRowsState(defaults.rows);
@@ -239,6 +317,9 @@ export function useDisplayConfig() {
     setHideSoldOutEntriesState(defaults.hideSoldOutEntries);
     setHidePastEntriesState(defaults.hidePastEntries);
     setThemeIdState(defaults.themeId);
+    setViewModeState(defaults.viewMode);
+    setStatisticsTabState(defaults.statisticsTab);
+    setStatsTabAutoRotateState(defaults.statsTabAutoRotate);
     applyThemeToDocument(defaults.themeId);
     clearThemeFromStorage();
     try {
@@ -251,16 +332,24 @@ export function useDisplayConfig() {
       localStorage.removeItem(LS_HIDE_EMPTY);
       localStorage.removeItem(LS_HIDE_SOLD_OUT);
       localStorage.removeItem(LS_HIDE_PAST);
+      localStorage.removeItem(LS_VIEW_MODE);
+      localStorage.removeItem(LS_STATS_TAB);
+      localStorage.removeItem(LS_STATS_TAB_AUTOROTATE);
     } catch {
       /* Fehler ignorieren */
     }
   }, [defaults]);
 
-  const tilesPerPage = cols * rows;
+  /** Für alle Kachel-Raster: min(eingestellte Spalten, max. Gruppenspalten). */
+  const effectiveCols = Math.max(MIN_TILE_DIM, Math.min(cols, maxGroupColumns));
+  const effectiveRows = Math.max(MIN_TILE_DIM, rows);
+  const tilesPerPage = effectiveCols * effectiveRows;
 
   return {
     cols,
     rows,
+    effectiveCols,
+    effectiveRows,
     tilesPerPage,
     pageRotationMs,
     pollMs,
@@ -280,6 +369,12 @@ export function useDisplayConfig() {
     setHidePastEntries,
     themeId,
     setThemeId,
+    viewMode,
+    setViewMode,
+    statisticsTab,
+    setStatisticsTab,
+    statsTabAutoRotate,
+    setStatsTabAutoRotate,
     resetToDefaults,
     defaults,
   };

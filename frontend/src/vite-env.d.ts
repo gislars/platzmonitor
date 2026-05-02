@@ -15,6 +15,11 @@ interface ImportMetaEnv {
   readonly VITE_HIDE_SOLD_OUT_ENTRIES?: string;
   readonly VITE_HIDE_PAST_ENTRIES?: string;
   readonly VITE_DEFAULT_THEME?: string;
+  readonly VITE_DEFAULT_VIEW_MODE?: string;
+  readonly VITE_DEFAULT_STATS_TAB?: string;
+  readonly VITE_REGISTRATIONS_POLL_MS?: string;
+  /** Dev: positive Zahl = Warteliste an erstem endlichen Eintrag simulieren (Balken, Kacheln) */
+  readonly VITE_SIMULATE_WAITLIST?: string;
 }
 
 interface ImportMeta {

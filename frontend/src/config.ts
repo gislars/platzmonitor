@@ -131,3 +131,32 @@ export function getDefaultHidePastEntries(): boolean {
 
 /** Build-Default für das UI-Theme: `VITE_DEFAULT_THEME` (Ids aus `THEMES`, sonst `fossgis-light`). */
 export { getDefaultThemeIdFromEnv, THEMES, type ThemeId } from "./themes";
+
+export type ViewMode = "tiles" | "statistics";
+export type StatisticsTab = "workshops" | "registrations";
+
+export function getDefaultViewMode(): ViewMode {
+  const raw = import.meta.env.VITE_DEFAULT_VIEW_MODE?.trim();
+  if (raw === "statistics") {
+    return "statistics";
+  }
+  return "tiles";
+}
+
+export function getDefaultStatisticsTab(): StatisticsTab {
+  const raw = import.meta.env.VITE_DEFAULT_STATS_TAB?.trim();
+  if (raw === "registrations") {
+    return "registrations";
+  }
+  return "workshops";
+}
+
+/** Polling Aggregations-API Registrierungen (Standard 1 h). */
+export function getRegistrationsPollIntervalMs(): number {
+  return parsePositiveIntEnv(
+    import.meta.env.VITE_REGISTRATIONS_POLL_MS,
+    3_600_000,
+    MIN_POLL_INTERVAL_MS,
+    3_600_000 * 24
+  );
+}

@@ -89,6 +89,43 @@ class Settings(BaseSettings):
         alias="LOG_FILE",
         description="App-Logdatei; leer = /var/log/platzmonitor/app.log",
     )
+    history_db_path: str = Field(default="data/history.sqlite", alias="HISTORY_DB_PATH")
+    history_retention_days: int = Field(
+        default=0,
+        ge=0,
+        alias="HISTORY_RETENTION_DAYS",
+        description="0 = unbegrenzt; sonst beim Schreiben ggf. alte Buckets loeschen",
+    )
+    history_bucket_seconds: int = Field(
+        default=3600,
+        ge=60,
+        le=86400,
+        alias="HISTORY_BUCKET_SECONDS",
+    )
+    history_default_window_hours: int = Field(
+        default=0,
+        ge=0,
+        alias="HISTORY_DEFAULT_WINDOW_HOURS",
+        description="0 = keine Default-Begrenzung im Client; Server nutzt seit erstem Bucket",
+    )
+    registrations_db_path: str = Field(
+        default="data/registrations.sqlite",
+        alias="REGISTRATIONS_DB_PATH",
+    )
+    booking_timeline_db_path: str = Field(
+        default="data/booking_timeline.sqlite",
+        alias="BOOKING_TIMELINE_DB_PATH",
+    )
+    booking_timeline_refresh_seconds: int = Field(
+        default=900,
+        ge=60,
+        le=86400,
+        alias="BOOKING_TIMELINE_REFRESH_SECONDS",
+        description=(
+            "Mindestabstand zwischen Neuaufbauten Workshop-Kumulativa aus pretix-Transaktionen "
+            "(nach erfolgreicher Verfügbarkeitsaktualisierung)"
+        ),
+    )
 
 
 @lru_cache

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Any, Literal
 
@@ -79,6 +80,30 @@ def _first_item_for_quota(
     return None
 
 
+def _parse_api_id(raw: Any) -> int | None:
+    """pretix-IDs aus int oder gelegentlich Ziffernstring; optional URL-Pfad."""
+    if raw is None:
+        return None
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, float) and raw.is_integer():
+        return int(raw)
+    if isinstance(raw, str):
+        s = raw.strip().rstrip("/")
+        if s.isdigit():
+            return int(s)
+        m = re.search(r"/items/(\d+)/", s)
+        if m:
+            return int(m.group(1))
+        try:
+            return int(s)
+        except ValueError:
+            return None
+    return None
+
+
 def _quota_label(quota: dict[str, Any], items_by_id: dict[int, dict[str, Any]]) -> str:
     raw = quota.get("name")
     if isinstance(raw, str) and raw.strip():
@@ -95,40 +120,49 @@ def _quota_label(quota: dict[str, Any], items_by_id: dict[int, dict[str, Any]]) 
 
 
 def _waiting_entry_matches_quota(wl: dict[str, Any], quota: dict[str, Any]) -> bool:
-    raw_item = wl.get("item")
-    if raw_item is None:
+    """WL-Eintrag passt zur Quota inkl. Subevent (pretix Event-Serien)."""
+    q_sub = _parse_api_id(quota.get("subevent"))
+    wl_sub = _parse_api_id(wl.get("subevent"))
+    if q_sub != wl_sub:
         return False
-    try:
-        item_id = int(raw_item)
-    except (TypeError, ValueError):
+
+    item_id = _parse_api_id(wl.get("item"))
+    if item_id is None:
         return False
     q_items: list[int] = []
     for x in quota.get("items") or []:
-        try:
-            q_items.append(int(x))
-        except (TypeError, ValueError):
-            continue
+        pid = _parse_api_id(x)
+        if pid is not None:
+            q_items.append(pid)
     if item_id not in q_items:
         return False
     q_vars: list[int] = []
     for x in quota.get("variations") or []:
-        try:
-            q_vars.append(int(x))
-        except (TypeError, ValueError):
-            continue
+        vid = _parse_api_id(x)
+        if vid is not None:
+            q_vars.append(vid)
     if not q_vars:
         return True
-    raw_var = wl.get("variation")
-    if raw_var is None:
+    var_id = _parse_api_id(wl.get("variation"))
+    if var_id is None:
         return False
-    try:
-        return int(raw_var) in q_vars
-    except (TypeError, ValueError):
-        return False
+    return var_id in q_vars
 
 
 def _count_waiting_for_quota(quota: dict[str, Any], wl_entries: list[dict[str, Any]]) -> int:
     return sum(1 for e in wl_entries if _waiting_entry_matches_quota(e, quota))
+
+
+def _waiting_list_count_for_quota(
+    quota: dict[str, Any], wl_entries: list[dict[str, Any]], wl_ok: bool
+) -> int | None:
+    """Pretix-Zaehler aus Quota-Feld waiting_list oder manuelle WL-Zaehlung."""
+    raw = quota.get("waiting_list")
+    if isinstance(raw, int) and raw >= 0:
+        return raw
+    if not wl_ok:
+        return None
+    return _count_waiting_for_quota(quota, wl_entries)
 
 
 def _quota_to_entry(
@@ -218,7 +252,7 @@ def build_availability(settings: Settings) -> AvailabilityResponse:
         if group_id == "workshops" and schedule is not None and sort_at is None:
             continue
         wl_enabled = bool(item.get("allow_waitinglist")) if item else False
-        wl_count = _count_waiting_for_quota(quota, wl_entries) if wl_ok else None
+        wl_count = _waiting_list_count_for_quota(quota, wl_entries, wl_ok)
         entry = _quota_to_entry(quota, label, group_id, sort_at, pretalx_code, wl_enabled, wl_count)
         add_entry(group_id, group_title, entry)
 

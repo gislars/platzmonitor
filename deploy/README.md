@@ -235,6 +235,6 @@ Frontend über nginx:
 
 - `event-api`: Pfad Präfix, unter dem die API hinter dem Reverse Proxy liegt.
 - `ROOT_PATH`: FastAPI Einstellung, damit Routing und OpenAPI hinter einem Pfad Präfix funktionieren.
-- `VITE_API_BASE_URL`: Basis URL der API im Frontend (leer im Dev, gesetzt in Produktion).
+- `VITE_API_BASE_URL`: Basis URL der API im Frontend (leer im lokalen Vite Betrieb bei Proxy unter `/api`, gesetzt wenn Frontend die API ohne Proxy unter anderem Prefix erreicht).
 - Reverse Proxy: Webserver, der Anfragen an Backend und Frontend weiterleitet.
 - CORS: Browser Schutz, wenn Frontend und API auf unterschiedlichen Origins liegen.

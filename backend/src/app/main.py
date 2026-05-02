@@ -10,7 +10,10 @@ from app.loggers import get_logger
 from app.logging_config import configure_logging
 from app.logging_utils import safe_url_for_log
 from app.routes.availability import router as availability_router
+from app.routes.booking_timeline import router as booking_timeline_router
+from app.routes.history import router as history_router
 from app.routes.pretalx_public import router as pretalx_public_router
+from app.routes.registrations import router as registrations_router
 from app.services.availability_cache import refresh_availability_snapshot
 from app.settings import get_settings
 
@@ -93,4 +96,7 @@ elif _origins:
     )
 
 app.include_router(availability_router, prefix="/api/v1")
+app.include_router(history_router, prefix="/api/v1")
+app.include_router(booking_timeline_router, prefix="/api/v1")
+app.include_router(registrations_router, prefix="/api/v1")
 app.include_router(pretalx_public_router, prefix="/api/v1")

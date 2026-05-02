@@ -71,8 +71,8 @@ class _FakeResponse:
 
 
 class _FakeHttpxClient:
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        del args, kwargs
 
     def __enter__(self):
         return self
