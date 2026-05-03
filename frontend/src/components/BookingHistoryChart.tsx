@@ -22,13 +22,18 @@ export function BookingHistoryChart({
   onOpenEntryDetail,
 }: Props) {
   const titleId = `stat-hist-${useId().replace(/\W/g, "")}-title`;
+  const n = entries.length;
+  const countTitle = n === 1 ? "1 Eintrag" : `${String(n)} Einträge`;
 
   return (
     <section className="stat-reg-chart" aria-labelledby={titleId}>
       <div className="stat-reg-chart__head">
         <h3 id={titleId} className="stat-reg-chart__title">
           {title}
-          {" "}
+          <span className="stat-reg-chart__entry-count" title={countTitle}>
+            {" "}
+            ({n})
+          </span>{" "}
           <ChartStandInline iso={standIso} />
         </h3>
       </div>
