@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { RegistrationsEventSerie } from "../../types";
 import {
   registrationsHasAnyOnsite,
@@ -6,33 +6,9 @@ import {
   type RegistrationsChannelMode,
 } from "../../registrationCharts";
 import { useChartWidth } from "../../useChartWidth";
-import { useRegistrationsChartsInteraction } from "./useRegistrationsChartsInteraction";
 
-export function useRegistrationsTileChartSetup(
-  events: RegistrationsEventSerie[],
-  interactionChartKey?: string
-) {
+export function useRegistrationsTileChartSetup(events: RegistrationsEventSerie[]) {
   const chartW = useChartWidth(820, 56);
-  const { activeChartKey, setActiveChartKey } = useRegistrationsChartsInteraction();
-
-  const onPlotHoverChange = useCallback(
-    (hovering: boolean) => {
-      if (interactionChartKey === undefined) {
-        return;
-      }
-      if (hovering) {
-        setActiveChartKey(interactionChartKey);
-      } else {
-        setActiveChartKey((cur) => (cur === interactionChartKey ? null : cur));
-      }
-    },
-    [interactionChartKey, setActiveChartKey]
-  );
-
-  const peerDimmed =
-    interactionChartKey !== undefined &&
-    activeChartKey !== null &&
-    activeChartKey !== interactionChartKey;
 
   const onsitePossible = useMemo(() => registrationsHasAnyOnsite(events), [events]);
 
@@ -44,8 +20,6 @@ export function useRegistrationsTileChartSetup(
 
   return {
     chartW,
-    onPlotHoverChange,
-    peerDimmed,
     onsitePossible,
     chartMode,
     setMode,

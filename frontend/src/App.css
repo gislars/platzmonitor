@@ -738,12 +738,6 @@ button.page-indicator__seg:focus-visible {
   border: 1px solid var(--border);
   background: var(--surface);
   min-width: 0;
-  transition: opacity 0.16s ease;
-}
-
-.stat-reg-chart--peer-dimmed {
-  opacity: 0.4;
-  filter: saturate(0.75);
 }
 
 .stat-reg-chart__title {

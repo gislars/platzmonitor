@@ -17,7 +17,6 @@ type Props = {
   events: RegistrationsEventSerie[];
   emphasizedEventSlug: string;
   standIso?: string | null;
-  interactionChartKey?: string;
 };
 
 function buildCumulativeSeriesForMode(
@@ -64,10 +63,8 @@ export function RegistrationsCumulativeTile({
   events,
   emphasizedEventSlug,
   standIso,
-  interactionChartKey,
 }: Props) {
-  const { chartW, onPlotHoverChange, peerDimmed, onsitePossible, chartMode, setMode } =
-    useRegistrationsTileChartSetup(events, interactionChartKey);
+  const { chartW, onsitePossible, chartMode, setMode } = useRegistrationsTileChartSetup(events);
 
   const series = useMemo(
     () => buildCumulativeSeriesForMode(events, emphasizedEventSlug, chartMode),
@@ -76,10 +73,7 @@ export function RegistrationsCumulativeTile({
   const hasData = series.some((s) => s.points.length > 1);
 
   return (
-    <section
-      className={`stat-reg-chart${peerDimmed ? " stat-reg-chart--peer-dimmed" : ""}`}
-      aria-labelledby="stat-reg-cum-title"
-    >
+    <section className="stat-reg-chart" aria-labelledby="stat-reg-cum-title">
       <div className="stat-reg-chart__head">
         <h3 id="stat-reg-cum-title" className="stat-reg-chart__title">
           FOSSGIS Anmeldungen kumuliert
@@ -107,7 +101,6 @@ export function RegistrationsCumulativeTile({
           }
           formatY={formatRegistrationsCountDe}
           formatHoverBody={(weeks, val) => formatRegistrationsCumulativeHoverCaption(weeks, val)}
-          onPlotHoverChange={interactionChartKey !== undefined ? onPlotHoverChange : undefined}
           hoverSnapToNearestX
           selectableSeries={series.length > 1}
         />
