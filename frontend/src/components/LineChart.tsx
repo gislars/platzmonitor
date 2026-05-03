@@ -7,9 +7,9 @@ export type LineSeries = {
   label: string;
   emphasize?: boolean;
   dashed?: boolean;
-  /** 0 bis 1, Standard 1 */
+  /** Linienopazität 0…1, Vorgabe 1. */
   strokeOpacity?: number;
-  /** Nicht für vertikalen Hover (z. B. Bezugslinien Kapazität) */
+  /** Serie von Hover-Treffer und Fokus-Dimmung ausnehmen (z. B. Hilfslinien). */
   omitFromHover?: boolean;
   color: string;
   points: ChartPoint[];
@@ -19,45 +19,36 @@ type Props = {
   series: LineSeries[];
   width?: number;
   height?: number;
-  /** Sobald der Maus-Hover im Plot aktiv ist oder endet (z. B. anderes Diagramm reduzieren). */
+  /** Callback, sobald Hover im Plot beginnt oder endet. */
   onPlotHoverChange?: (hovering: boolean) => void;
   xLabel?: string;
   yLabel?: string;
-  /** Formatiert x im Hover-Overlay */
+  /** X-Wert im Hover-Tooltip als Text. */
   formatX?: (x: number) => string;
-  /** Formatiert x an den unteren Achsen-Ticks (Standard wie formatX) */
+  /** X-Werte an der unteren Achse (Vorgabe wie formatX). */
   formatXTick?: (x: number) => string;
-  /** Formatiert y für Tooltip und y-Ticks */
+  /** Y-Werte im Tooltip und an der linken Achse. */
   formatY?: (y: number) => string;
-  /** Eine Zeile unter dem Kurvennamen (ersetzt x:/y:-Zeilen) */
+  /** Zweite Tooltip-Zeile unter dem Kurvennamen. */
   formatHoverBody?: (xData: number, yData: number) => string;
-  /** wenn true: große «Wochen vorher» links, 0 rechts */
+  /** X-Richtung: große Werte links, kleinere rechts. */
   invertX?: boolean;
   padL?: number;
   padR?: number;
   padT?: number;
   padB?: number;
-  /**
-   * Max. vertikaler Abstand (SVG-ViewBox-Pixel) von der Maus zur interpolierten Kurve am gleichen x.
-   * Darüber kein Snap, kein Tooltip, keine Abblendung anderer Serien (nur „in der Nähe der Linie“).
-   */
+  /** Max. Abstand Maus–Kurve in SVG-Pixeln für Snap, Tooltip und Serienfokus. */
   hoverSnapMaxDySvg?: number;
-  /**
-   * Tooltip nutzt immer den nächsten Stützpunkt (Messwert dieser Woche/Stufe),
-   * nicht die lineare Interpolation auf der Kurve zwischen Stützstellen.
-   */
+  /** Tooltip-X am nächsten Messpunkt statt interpoliert auf der Linie. */
   hoverSnapToNearestX?: boolean;
-  /**
-   * Klick auf eine Datenreihe: diese fokussieren; Hover gilt nur noch für sie (auch bei größerem vertikalen Abstand).
-   * Klick ins Leere ohne Treffer löst die Auswahl wieder auf.
-   */
+  /** Klick wählt eine Serie zum Fokus; Klick ins Leere hebt auf. */
   selectableSeries?: boolean;
 };
 
-/** Standard-Toleranz: Snap/Dim nur nah an der Linie (nicht schon beim Betreten der Plotfläche). */
+/** Vorgabe für hoverSnapMaxDySvg (Hover nahe an der Linie). */
 const DEFAULT_HOVER_SNAP_MAX_DY_SVG = 22;
 
-/** Bildschirmkoordinaten in SVG-Zielkoordinaten (Skalierung/CSS/Zoom). */
+/** Client-Koordinaten in SVG-ViewBox-Koordinaten (Zoom/CSS berücksichtigt). */
 function clientToSvgPx(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
   const vb = svg.viewBox.baseVal;
   const svgW = vb.width;
@@ -77,7 +68,7 @@ function clientToSvgPx(svg: SVGSVGElement, clientX: number, clientY: number): { 
   return { x: l.x, y: l.y };
 }
 
-/** Y-Wert der Kurve beim Welt-x dataX (sortierte Stützstellen); null außerhalb des x-Bereichs */
+/** Linear interpolierter Y-Wert zu dataX innerhalb der Stützstellen, sonst null. */
 function interpolatedY(points: ChartPoint[], dataX: number, xEpsilon: number): number | null {
   if (points.length === 0) {
     return null;
@@ -109,7 +100,7 @@ function interpolatedY(points: ChartPoint[], dataX: number, xEpsilon: number): n
   return null;
 }
 
-/** Stützpunkt mit kleinstem horizontalen Abstand zu probeX (für diskrete x-Achse). */
+/** Messpunkt mit minimalem |x − probeX|. */
 function nearestPointByX(points: ChartPoint[], probeX: number): ChartPoint | null {
   if (points.length === 0) {
     return null;
@@ -127,11 +118,12 @@ function nearestPointByX(points: ChartPoint[], probeX: number): ChartPoint | nul
   return best;
 }
 
-/** Schnittpunkt unter der Maus-x: beste Kurve durch geringsten Abstand in y-Pixel zur Maus */
+/** Serien mit Hover-Treffern (ohne `omitFromHover`). */
 function hoverableSeries(seriesArr: LineSeries[]): LineSeries[] {
   return seriesArr.filter((s) => !s.omitFromHover);
 }
 
+/** Treffer: bei Maus-x die Serie mit kleinstem vertikalen Abstand zur Kurve innerhalb maxDySvg. */
 function hitAlongVerticalSlice(
   seriesArr: LineSeries[],
   mxPlot: number,
@@ -209,7 +201,7 @@ function defaultFormatX(x: number): string {
   return new Intl.NumberFormat('de-DE', { maximumFractionDigits: maxFrac }).format(x);
 }
 
-/** Schritt etwa 1, 2 oder 5 · 10^n (übliches Koordinatenraster). */
+/** Rasterschritt ≈ 1, 2 oder 5 · 10^n. */
 function niceTickStep(approxStep: number): number {
   if (!(approxStep > 1e-12) || !Number.isFinite(approxStep)) {
     return 1;
@@ -229,10 +221,7 @@ function niceTickStep(approxStep: number): number {
   return m * 10 ** exp;
 }
 
-/**
- * Aufsteigende Stützstellen mit gleichem Abstand, die [lo, hi] einschließen.
- * maxTicks: Zielobergrenze der Gitterlinien (inkl. untere und obere Kante).
- */
+/** Gleichmäßig verteilte Y-Tick-Werte von lo bis hi (höchstens etwa maxTicks Schritte). */
 function niceLinearTicks(lo: number, hi: number, maxTicks = 9): number[] {
   const a = Math.min(lo, hi);
   const b = Math.max(lo, hi);
@@ -268,7 +257,7 @@ function niceLinearTicks(lo: number, hi: number, maxTicks = 9): number[] {
   return ticks.length > 0 ? ticks : [a, b];
 }
 
-/** Mittelpunkt fuer `left`/translateX(-50%), damit das Tooltip nie seitlich aus der Plotbreite ragt (kein Overflow/Scrollbar). */
+/** Tooltip horizontal mittig unter dem Punkt, Randabstand zur Plotbreite. */
 function tooltipDockCenterPercent(args: {
   hxSvg: number;
   svgVBWidth: number;

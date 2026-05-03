@@ -1,4 +1,4 @@
-/** Standard: 55 s. Überschreiben mit `VITE_POLL_INTERVAL_MS` (Millisekunden, min. 5000). */
+/** Intervall für Verfügbarkeits-Polling; `VITE_POLL_INTERVAL_MS`, min. 5 s, Vorgabe 55 s. */
 const DEFAULT_POLL_INTERVAL_MS = 55_000;
 export const MIN_POLL_INTERVAL_MS = 5_000;
 
@@ -42,7 +42,7 @@ export function getPollIntervalMs(): number {
   );
 }
 
-/** Einzelabruf `fetch` zum Backend (ms, min. 5000, max. 120000). Standard 30000. */
+/** Timeout pro `fetch` ans Backend; `VITE_FETCH_TIMEOUT_MS`, 5 s–120 s, Vorgabe 30 s. */
 export function getFetchTimeoutMs(): number {
   return parsePositiveIntEnv(
     import.meta.env.VITE_FETCH_TIMEOUT_MS,
@@ -129,7 +129,7 @@ export function getDefaultHidePastEntries(): boolean {
   return raw === "1" || raw.toLowerCase() === "true";
 }
 
-/** Build-Default für das UI-Theme: `VITE_DEFAULT_THEME` (Ids aus `THEMES`, sonst `fossgis-light`). */
+/** Standard-Theme aus `VITE_DEFAULT_THEME` (siehe THEMES). */
 export { getDefaultThemeIdFromEnv, THEMES, type ThemeId } from "./themes";
 
 export type ViewMode = "tiles" | "statistics";
@@ -151,7 +151,7 @@ export function getDefaultStatisticsTab(): StatisticsTab {
   return "workshops";
 }
 
-/** Polling Aggregations-API Registrierungen (Standard 1 h). */
+/** Intervall für Registrierungs-Aggregation; `VITE_REGISTRATIONS_POLL_MS`, Vorgabe 1 h. */
 export function getRegistrationsPollIntervalMs(): number {
   return parsePositiveIntEnv(
     import.meta.env.VITE_REGISTRATIONS_POLL_MS,

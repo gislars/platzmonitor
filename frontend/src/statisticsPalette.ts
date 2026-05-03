@@ -1,7 +1,4 @@
-/**
- * Farbenblindfreundliche Serienpalette (Okabe–Ito / Paul-Tol-inspirierte Abstufung),
- * Werte ueber themes.css fuer Hell- und Dunkelmodus.
- */
+/** Farben für Diagramm-Serien; CSS-Variablen in themes.css (barrierearme Palette). */
 
 const CHART_CB_VARS = [
   "var(--chart-cb-0)",
@@ -14,15 +11,12 @@ const CHART_CB_VARS = [
   "var(--chart-cb-7)",
 ] as const;
 
-/** Hervorgehobenes Jahr (Konferenz): FOSSGIS-Orange ueber `--chart-emphasis` in themes.css. */
+/** Akzentfarbe für hervorgehobene Serie (CSS-Variable `--chart-emphasis`). */
 export function chartEmphasisColor(): string {
   return "var(--chart-emphasis)";
 }
 
-/**
- * Serie i in Liniendiagrammen (Anmeldungen) und Balkenfarbe Workshop/Exkursion.
- * @param emphasized Aktuelles Hervorheben (Konferenzjahr bei Registrations-Kacheln).
- */
+/** Strichfarbe für Reihe `index`; bei `emphasized` die Akzentfarbe. */
 export function registrationsSeriesStrokeColor(index: number, emphasized: boolean): string {
   if (emphasized) {
     return chartEmphasisColor();

@@ -3,7 +3,6 @@ import type { StatisticsTab } from "../config";
 import { sortEntriesByLabelAsc } from "../sortEntries";
 import type { Entry, Group, RegistrationsResponse } from "../types";
 import type { DisplayConfigState } from "../useDisplayConfig";
-import { RegistrationsChartsInteractionProvider } from "./registrationsCharts/RegistrationsChartsInteractionProvider";
 import { BookingHistoryChart } from "./BookingHistoryChart";
 import { PaginatedTileGrid } from "./PaginatedTileGrid";
 import { RegistrationsCumulativeTile } from "./RegistrationsCumulativeTile";
@@ -12,7 +11,7 @@ import { RegistrationsWeeklyTile } from "./RegistrationsWeeklyTile";
 
 const REGISTRATIONS_CHART_PAGE_KEYS: ("weekly" | "cumulative")[] = ["weekly", "cumulative"];
 
-/** Gruppe «excursions» laut Backend-Standardsatz; eigene IDs in GROUP_RULES bitte ebenfalls verwenden. */
+/** Trennt Einträge der Gruppe «excursions» von übrigen Workshops für die Statistik-Charts. */
 function splitBookingHistoryEntries(groups: readonly Group[]): {
   excursionEntries: Entry[];
   workshopEntries: Entry[];
@@ -35,14 +34,14 @@ function splitBookingHistoryEntries(groups: readonly Group[]): {
 type Props = {
   displayConfig: DisplayConfigState;
   kiosk: boolean;
-  /** Verfügbarkeitszeitstempel (pretix) für Begleitprogramm-Balken. */
+  /** Zeitstempel der Verfügbarkeitsdaten (pretix) für Balkendiagramme. */
   availabilityFetchedAt?: string | null;
-  /** Antwortzeit der Registrierungsaggregation für Anmeldungsdiagramme. */
+  /** Zeitstempel der Registrierungsaggregation für Anmeldungsdiagramme. */
   registrationsFetchedAt?: string | null;
   visibleGroups: Group[];
   registrations: RegistrationsResponse | null;
   statsError: string | null;
-  /** Beide Statistik-APIs down: kein roter Banner, Hinweis nur im Dashboard-Kopf */
+  /** Statistik-APIs nicht erreichbar: Hinweis im Kopfbereich statt rotem Tab-Banner. */
   statsServerUnreachable?: boolean;
   globalPageIndex: number;
   onGlobalPageSelect: (index: number) => void;
@@ -189,47 +188,43 @@ export function StatisticsView({
           ) : null}
           {registrations !== null && regEvents.length > 0 ? (
             <div className="stat-registrations">
-              <RegistrationsChartsInteractionProvider>
-                <PaginatedTileGrid
-                  key={`reg-charts-${String(displayConfig.effectiveCols)}-${String(displayConfig.effectiveRows)}-${String(displayConfig.tilesPerPage)}-${displayConfig.groupRotationMode}`}
-                  items={REGISTRATIONS_CHART_PAGE_KEYS}
-                  itemKey={(k) => k}
-                  renderItem={(k) =>
-                    k === "weekly" ? (
-                      <RegistrationsWeeklyTile
-                        events={regEvents}
-                        emphasizedEventSlug={registrations.emphasizedEventSlug}
-                        standIso={registrationsFetchedAt}
-                        interactionChartKey="weekly"
-                      />
-                    ) : (
-                      <RegistrationsCumulativeTile
-                        events={regEvents}
-                        emphasizedEventSlug={registrations.emphasizedEventSlug}
-                        standIso={registrationsFetchedAt}
-                        interactionChartKey="cumulative"
-                      />
-                    )
-                  }
-                  tilesPerPage={displayConfig.tilesPerPage}
-                  cols={displayConfig.effectiveCols}
-                  rows={displayConfig.effectiveRows}
-                  pageRotationMs={displayConfig.pageRotationMs}
-                  rotationMode={displayConfig.groupRotationMode}
-                  globalPageIndex={globalPageIndex}
-                  onGlobalPageSelect={
-                    displayConfig.groupRotationMode === "global" ? onGlobalPageSelect : undefined
-                  }
-                  headerSlot={
-                    <RegistrationsLegend
+              <PaginatedTileGrid
+                key={`reg-charts-${String(displayConfig.effectiveCols)}-${String(displayConfig.effectiveRows)}-${String(displayConfig.tilesPerPage)}-${displayConfig.groupRotationMode}`}
+                items={REGISTRATIONS_CHART_PAGE_KEYS}
+                itemKey={(k) => k}
+                renderItem={(k) =>
+                  k === "weekly" ? (
+                    <RegistrationsWeeklyTile
                       events={regEvents}
                       emphasizedEventSlug={registrations.emphasizedEventSlug}
+                      standIso={registrationsFetchedAt}
                     />
-                  }
-                  wrapperClassName="dashboard__section stat-registrations__section"
-                  ariaLabel="Anmeldungen, Mehrjahresdiagramme"
-                />
-              </RegistrationsChartsInteractionProvider>
+                  ) : (
+                    <RegistrationsCumulativeTile
+                      events={regEvents}
+                      emphasizedEventSlug={registrations.emphasizedEventSlug}
+                      standIso={registrationsFetchedAt}
+                    />
+                  )
+                }
+                tilesPerPage={displayConfig.tilesPerPage}
+                cols={displayConfig.effectiveCols}
+                rows={displayConfig.effectiveRows}
+                pageRotationMs={displayConfig.pageRotationMs}
+                rotationMode={displayConfig.groupRotationMode}
+                globalPageIndex={globalPageIndex}
+                onGlobalPageSelect={
+                  displayConfig.groupRotationMode === "global" ? onGlobalPageSelect : undefined
+                }
+                headerSlot={
+                  <RegistrationsLegend
+                    events={regEvents}
+                    emphasizedEventSlug={registrations.emphasizedEventSlug}
+                  />
+                }
+                wrapperClassName="dashboard__section stat-registrations__section"
+                ariaLabel="Anmeldungen, Mehrjahresdiagramme"
+              />
             </div>
           ) : null}
         </div>

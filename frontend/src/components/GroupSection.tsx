@@ -5,7 +5,7 @@ import { PaginatedTileGrid } from "./PaginatedTileGrid";
 import { QuotaCard } from "./QuotaCard";
 
 type Props = {
-  /** ISO-Zeit des letzten Verfügbarkeitsabrufs (gemeinsam für alle Karten der Gruppe). */
+  /** Zeitpunkt des letzten Verfügbarkeitsabrufs für diese Gruppe (ISO). */
   availabilityFetchedAt?: string | null;
   group: Group;
   tilesPerPage: number;

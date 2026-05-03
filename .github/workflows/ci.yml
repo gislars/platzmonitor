@@ -37,9 +37,6 @@ jobs:
         working-directory: backend
         run: uv sync --group dev
 
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
+      - name: Typecheck & Lint
+        run: pnpm test
 

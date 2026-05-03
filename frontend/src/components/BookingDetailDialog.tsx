@@ -152,7 +152,7 @@ function BookingDetailDialogLoaded({ entry, onClose }: LoadedProps) {
                 width={chartW}
                 height={320}
                 xLabel="Datum"
-                yLabel="Kumulativ gebucht"
+                yLabel="Gebuchte Plätze"
                 formatX={(tSeconds) =>
                   new Date(Math.round(tSeconds) * 1000).toLocaleDateString("de-DE", {
                     day: "2-digit",

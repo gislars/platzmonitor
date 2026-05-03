@@ -19,7 +19,7 @@ type Props<T> = {
   emptyText?: string;
   wrapperClassName?: string;
   ariaLabelledBy?: string;
-  /** Wenn gesetzt und ohne `ariaLabelledBy`, zugänglicher Abschnittsname */
+  /** Zugänglicher Abschnittsname, falls kein `ariaLabelledBy` gesetzt ist. */
   ariaLabel?: string;
 };
 
@@ -74,9 +74,9 @@ export function PaginatedTileGrid<T>({
         : (i: number) => setPage(i)
       : undefined;
 
+  /** Zeilen `minmax(0, auto)`: Zeilenhöhe folgt dem Inhalt. */
   const gridStyle = {
     gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-    /* auto: Zeilen nur so hoch wie Inhalt (kein erzwungenes 1fr bei wenigen Kacheln untereinander). */
     gridTemplateRows: `repeat(${rows}, minmax(0, auto))`,
   } as const;
 

@@ -1,6 +1,6 @@
 import { formatFetchedDeShort } from "../formatFetchedDeShort";
 
-/** Dezent hinter Überschrift: „Stand: …“ bei gültiger ISO-Zeit. */
+/** Zeigt «Stand: …» mit kurz formatierter ISO-Zeit neben einer Überschrift. */
 export function ChartStandInline({ iso }: { iso?: string | null }) {
   const raw = iso?.trim();
   if (raw === undefined || raw === "") {

@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Optional: anderes API-Backend. Wenn gesetzt, wird PATH relativ zu dieser Base gebaut. */
+  /** Basis-URL des Backends; relative API-Pfade werden daran angehängt. */
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_POLL_INTERVAL_MS?: string;
   readonly VITE_FETCH_TIMEOUT_MS?: string;
@@ -18,7 +18,7 @@ interface ImportMetaEnv {
   readonly VITE_DEFAULT_VIEW_MODE?: string;
   readonly VITE_DEFAULT_STATS_TAB?: string;
   readonly VITE_REGISTRATIONS_POLL_MS?: string;
-  /** Dev: positive Zahl = Warteliste an erstem endlichen Eintrag simulieren (Balken, Kacheln) */
+  /** Nur Dev: nicht-negative Zahl simuliert Warteliste am ersten Listeneintrag. */
   readonly VITE_SIMULATE_WAITLIST?: string;
 }
 

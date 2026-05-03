@@ -1,4 +1,4 @@
-/** Hinweise die typischerweise Verbindungs- oder Reverse-Proxy-Fehler meinen (ohne garantierte Zuordnung). */
+/** Erkennt typische Netzwerk-, Timeout- und 502/503/504-Meldungstexte. */
 const REACHABLE_FALSE_POSITIVE_SAFE = /\b(?:failed to fetch|load failed|network error|abort|timeout)\b/i;
 
 export function isUnreachableApiErrorMessage(message: string): boolean {
@@ -22,16 +22,13 @@ export function isUnreachableApiErrorMessage(message: string): boolean {
 }
 
 export type StatisticsFetchErrorSummary = {
-  /** Für rote Hinweisleiste unter den Tabs; null wenn nur der Header-Hinweis genügt */
+  /** Meldung für die rote Leiste unter den Statistik-Tabs oder null. */
   bannerMessage: string | null;
-  /** Anmeldungen-API nicht erreichbar (Netzwerk oder typische Proxy-Fehler): Hinweis wie im Kachelmodus im Kopf */
+  /** Bei erkanntem Netzwerkfehler: Hinweis im Dashboard-Kopf statt Tab-Banner. */
   showHeaderUnreachableHint: boolean;
 };
 
-/**
- * Fehler der Registrierungen-API im Statistikmodus.
- * Verlaufs-API `/history` wird im Client nicht periodisch abgefragt (aktuell keine Anzeige davon).
- */
+/** Wertet die Registrierungen-API-Fehlermeldung für Tab-Banner und Kopfhinweis aus. */
 export function summarizeStatisticsFetchErrors(registrationsError: string | null): StatisticsFetchErrorSummary {
   const r = registrationsError?.trim() ?? null;
   if (r === null) {

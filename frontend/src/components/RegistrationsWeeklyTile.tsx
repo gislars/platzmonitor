@@ -4,6 +4,7 @@ import {
   formatRegistrationsCountDe,
   pointsThroughConferenceStart,
   registrationsChannelValue,
+  registrationsYAxisLabel,
   type RegistrationsChannelMode,
 } from "../registrationCharts";
 import type { RegistrationsEventSerie } from "../types";
@@ -18,8 +19,6 @@ type Props = {
   events: RegistrationsEventSerie[];
   emphasizedEventSlug: string;
   standIso?: string | null;
-  /** Für Abdunkeln des jeweils anderen Anmeldungs-Diagramms beim Hover. */
-  interactionChartKey?: string;
 };
 
 function parseDay(iso: string): number {
@@ -65,20 +64,12 @@ function buildWeeklySeriesForMode(
   });
 }
 
-const Y_LABEL: Record<RegistrationsChannelMode, string> = {
-  online: "Pro Woche (Online)",
-  onsite: "Pro Woche (vor Ort)",
-  total: "Pro Woche (Summe)",
-};
-
 export function RegistrationsWeeklyTile({
   events,
   emphasizedEventSlug,
   standIso,
-  interactionChartKey,
 }: Props) {
-  const { chartW, onPlotHoverChange, peerDimmed, onsitePossible, chartMode, setMode } =
-    useRegistrationsTileChartSetup(events, interactionChartKey);
+  const { chartW, onsitePossible, chartMode, setMode } = useRegistrationsTileChartSetup(events);
 
   const series = useMemo(
     () => buildWeeklySeriesForMode(events, emphasizedEventSlug, chartMode),
@@ -87,10 +78,7 @@ export function RegistrationsWeeklyTile({
   const hasData = series.some((s) => s.points.length > 0);
 
   return (
-    <section
-      className={`stat-reg-chart${peerDimmed ? " stat-reg-chart--peer-dimmed" : ""}`}
-      aria-labelledby="stat-reg-week-title"
-    >
+    <section className="stat-reg-chart" aria-labelledby="stat-reg-week-title">
       <div className="stat-reg-chart__head">
         <h3 id="stat-reg-week-title" className="stat-reg-chart__title">
           FOSSGIS Anmeldungen pro Woche
@@ -111,12 +99,11 @@ export function RegistrationsWeeklyTile({
           width={chartW}
           height={300}
           xLabel="Wochen vor Konferenzbeginn"
-          yLabel={Y_LABEL[chartMode]}
+          yLabel={registrationsYAxisLabel[chartMode]}
           invertX
           formatXTick={(w) => String(Math.round(w))}
           formatY={formatRegistrationsCountDe}
           formatHoverBody={(weeks, val) => formatRegistrationsWeeklyHoverCaption(weeks, val)}
-          onPlotHoverChange={interactionChartKey !== undefined ? onPlotHoverChange : undefined}
           hoverSnapToNearestX
           selectableSeries={series.length > 1}
         />

@@ -3,6 +3,7 @@ import {
   formatRegistrationsCumulativeHoverCaption,
   formatRegistrationsCountDe,
   pointsThroughConferenceStart,
+  registrationsYAxisLabel,
   type RegistrationsChannelMode,
 } from "../registrationCharts";
 import type { RegistrationsEventSerie } from "../types";
@@ -17,7 +18,6 @@ type Props = {
   events: RegistrationsEventSerie[];
   emphasizedEventSlug: string;
   standIso?: string | null;
-  interactionChartKey?: string;
 };
 
 function buildCumulativeSeriesForMode(
@@ -54,20 +54,12 @@ function buildCumulativeSeriesForMode(
   });
 }
 
-const Y_LABEL: Record<RegistrationsChannelMode, string> = {
-  online: "Online",
-  onsite: "Vor Ort",
-  total: "Anmeldungen (Gesamt)",
-};
-
 export function RegistrationsCumulativeTile({
   events,
   emphasizedEventSlug,
   standIso,
-  interactionChartKey,
 }: Props) {
-  const { chartW, onPlotHoverChange, peerDimmed, onsitePossible, chartMode, setMode } =
-    useRegistrationsTileChartSetup(events, interactionChartKey);
+  const { chartW, onsitePossible, chartMode, setMode } = useRegistrationsTileChartSetup(events);
 
   const series = useMemo(
     () => buildCumulativeSeriesForMode(events, emphasizedEventSlug, chartMode),
@@ -76,10 +68,7 @@ export function RegistrationsCumulativeTile({
   const hasData = series.some((s) => s.points.length > 1);
 
   return (
-    <section
-      className={`stat-reg-chart${peerDimmed ? " stat-reg-chart--peer-dimmed" : ""}`}
-      aria-labelledby="stat-reg-cum-title"
-    >
+    <section className="stat-reg-chart" aria-labelledby="stat-reg-cum-title">
       <div className="stat-reg-chart__head">
         <h3 id="stat-reg-cum-title" className="stat-reg-chart__title">
           FOSSGIS Anmeldungen kumuliert
@@ -100,14 +89,13 @@ export function RegistrationsCumulativeTile({
           width={chartW}
           height={300}
           xLabel="Wochen vor Konferenzbeginn"
-          yLabel={Y_LABEL[chartMode]}
+          yLabel={registrationsYAxisLabel[chartMode]}
           invertX
           formatXTick={(w) =>
             new Intl.NumberFormat("de-DE", { maximumFractionDigits: w % 1 === 0 ? 0 : 1 }).format(w)
           }
           formatY={formatRegistrationsCountDe}
           formatHoverBody={(weeks, val) => formatRegistrationsCumulativeHoverCaption(weeks, val)}
-          onPlotHoverChange={interactionChartKey !== undefined ? onPlotHoverChange : undefined}
           hoverSnapToNearestX
           selectableSeries={series.length > 1}
         />

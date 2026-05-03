@@ -1,9 +1,6 @@
 import type { Entry } from "./types";
 
-/**
- * Ob ein Eintrag nach bekanntem Startzeitpunkt (`sortAt`) noch nicht begonnen hat.
- * Ohne gültiges `sortAt` (z. B. „Termin offen“): true, damit nichts Verborgenes wegfällt.
- */
+/** Liefert true, wenn `sortAt` fehlt, unlesbar ist oder nicht vor dem aktuellen Zeitpunkt liegt. */
 export function isEntryStartInFutureOrNow(entry: Entry): boolean {
   const raw = entry.sortAt;
   if (raw == null || raw === "") {

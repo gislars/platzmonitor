@@ -8,7 +8,7 @@ function sortKey(entry: Entry): number {
   return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
 }
 
-/** Aufsteigend nach Datum/Uhrzeit (`sortAt`). Einträge ohne gültiges Datum stehen am Ende, Reihenfolge untereinander stabil. */
+/** Sortiert aufsteigend nach `sortAt`; ungültige oder fehlende Werte sortieren ans Ende (stabil über `id`). */
 export function sortEntriesByDateTimeAsc(entries: Entry[]): Entry[] {
   return [...entries].sort((a, b) => {
     const ka = sortKey(a);
@@ -20,7 +20,7 @@ export function sortEntriesByDateTimeAsc(entries: Entry[]): Entry[] {
   });
 }
 
-/** Aufsteigend nach angezeigtem Titel (`label`). Deutsche Sortierung; bei Gleichheit stabil über `id`. */
+/** Sortiert aufsteigend nach `label` (Locale de); bei Gleichheit stabil über `id`. */
 export function sortEntriesByLabelAsc(entries: Entry[]): Entry[] {
   return [...entries].sort((a, b) => {
     const cmp = a.label.localeCompare(b.label, "de", { sensitivity: "base" });

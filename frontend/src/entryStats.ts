@@ -1,6 +1,6 @@
 import type { Entry } from "./types";
 
-/** gebuchte Plätze: bei finite über total−free, bei unlimited über transactionBooked (Timeline), sonst null. */
+/** Gebuchte Plätze aus Kapazität (total−free) oder aus der Timeline bei unlimited; null wenn unbekannt. */
 export function entryBooked(entry: Entry): number | null {
   if (entry.availability.kind === "unlimited") {
     const tb = entry.transactionBooked;
@@ -20,7 +20,7 @@ export function entryFreePlaces(entry: Entry): number | null {
   return entry.availability.free;
 }
 
-/** Roher API-Wert in eine nicht-negative Ganzzahl (sonst 0). Ignoriert Booleans und NaN. */
+/** Normalisiert Wartelisten-Rohwert (Zahl oder Ziffernstring) auf eine nicht-negative Ganzzahl. */
 function normalizedWaitingListCount(raw: number | string | null | undefined): number {
   if (raw == null) {
     return 0;
@@ -40,7 +40,7 @@ function normalizedWaitingListCount(raw: number | string | null | undefined): nu
   return k > 0 ? k : 0;
 }
 
-/** Wartelistenanzahl, falls aktiviert und bekannt, sonst 0 */
+/** Wartelistenplätze bei aktivierter Warteliste, andernfalls 0. */
 export function entryWaitingList(entry: Entry): number {
   if (!entry.waitingListEnabled) {
     return 0;
