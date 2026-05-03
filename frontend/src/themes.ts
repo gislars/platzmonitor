@@ -28,6 +28,7 @@ export function getInitialThemeId(): ThemeId {
       return stored;
     }
   } catch {
+    void 0;
   }
   return getDefaultThemeIdFromEnv();
 }
@@ -42,6 +43,7 @@ export function persistThemeId(themeId: ThemeId): void {
   try {
     localStorage.setItem(LS_THEME, themeId);
   } catch {
+    void 0;
   }
 }
 
@@ -49,6 +51,7 @@ export function clearThemeFromStorage(): void {
   try {
     localStorage.removeItem(LS_THEME);
   } catch {
+    void 0;
   }
 }
 
