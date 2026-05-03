@@ -118,20 +118,23 @@ class PretalxSchedule:
     title_to_meta: dict[str, tuple[datetime, str | None]]
 
 
-_CACHE: tuple[float, PretalxSchedule] | None = None
+# URL -> (Zeitstempel, Schedule); wechsel der Schedule-URL laedt automatisch neu.
+_CACHE: dict[str, tuple[float, PretalxSchedule]] = {}
 
 
 def load_pretalx_schedule(settings: Settings) -> PretalxSchedule | None:
     global _CACHE
     now = time.time()
-    if _CACHE is not None:
-        cached_at, cached = _CACHE
-        if now - cached_at < max(1, int(settings.pretalx_schedule_cache_seconds)):
-            return cached
-
     url = settings.pretalx_schedule_url.strip()
     if not url:
         return None
+
+    ttl = max(1, int(settings.pretalx_schedule_cache_seconds))
+    hit = _CACHE.get(url)
+    if hit is not None:
+        cached_at, cached = hit
+        if now - cached_at < ttl:
+            return cached
 
     try:
         with httpx.Client(timeout=30.0, follow_redirects=True) as client:
@@ -152,7 +155,7 @@ def load_pretalx_schedule(settings: Settings) -> PretalxSchedule | None:
         return None
 
     sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(data))
-    _CACHE = (now, sched)
+    _CACHE[url] = (now, sched)
     return sched
 
 
