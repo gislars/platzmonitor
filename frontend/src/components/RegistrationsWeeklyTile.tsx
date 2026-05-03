@@ -4,6 +4,7 @@ import {
   formatRegistrationsCountDe,
   pointsThroughConferenceStart,
   registrationsChannelValue,
+  registrationsYAxisLabel,
   type RegistrationsChannelMode,
 } from "../registrationCharts";
 import type { RegistrationsEventSerie } from "../types";
@@ -63,12 +64,6 @@ function buildWeeklySeriesForMode(
   });
 }
 
-const Y_LABEL: Record<RegistrationsChannelMode, string> = {
-  online: "Pro Woche (Online)",
-  onsite: "Pro Woche (vor Ort)",
-  total: "Pro Woche (Summe)",
-};
-
 export function RegistrationsWeeklyTile({
   events,
   emphasizedEventSlug,
@@ -104,7 +99,7 @@ export function RegistrationsWeeklyTile({
           width={chartW}
           height={300}
           xLabel="Wochen vor Konferenzbeginn"
-          yLabel={Y_LABEL[chartMode]}
+          yLabel={registrationsYAxisLabel[chartMode]}
           invertX
           formatXTick={(w) => String(Math.round(w))}
           formatY={formatRegistrationsCountDe}

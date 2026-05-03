@@ -3,6 +3,7 @@ import {
   formatRegistrationsCumulativeHoverCaption,
   formatRegistrationsCountDe,
   pointsThroughConferenceStart,
+  registrationsYAxisLabel,
   type RegistrationsChannelMode,
 } from "../registrationCharts";
 import type { RegistrationsEventSerie } from "../types";
@@ -53,12 +54,6 @@ function buildCumulativeSeriesForMode(
   });
 }
 
-const Y_LABEL: Record<RegistrationsChannelMode, string> = {
-  online: "Online",
-  onsite: "Vor Ort",
-  total: "Anmeldungen (Gesamt)",
-};
-
 export function RegistrationsCumulativeTile({
   events,
   emphasizedEventSlug,
@@ -94,7 +89,7 @@ export function RegistrationsCumulativeTile({
           width={chartW}
           height={300}
           xLabel="Wochen vor Konferenzbeginn"
-          yLabel={Y_LABEL[chartMode]}
+          yLabel={registrationsYAxisLabel[chartMode]}
           invertX
           formatXTick={(w) =>
             new Intl.NumberFormat("de-DE", { maximumFractionDigits: w % 1 === 0 ? 0 : 1 }).format(w)

@@ -1,17 +1,25 @@
 import type { RegistrationsEventSerie, RegistrationsPoint } from "./types";
 
-/** Omits snapshots after conference start (negative weeksBefore from API). */
+/** Nur Messpunkte mit `weeksBefore` ≥ 0, also bis zum Konferenzbeginn. */
 export function pointsThroughConferenceStart(pts: readonly RegistrationsPoint[]): RegistrationsPoint[] {
   return pts.filter((p) => p.weeksBefore >= 0);
 }
 
+/** Ganzzahl für deutsche Tausendertrennzeichen, ohne Nachkommastellen. */
 export function formatRegistrationsCountDe(n: number): string {
   return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n));
 }
 
 export type RegistrationsChannelMode = "online" | "onsite" | "total";
 
-/** Kartenmodus ohne verbotene Kombination («vor Ort», obwohl keine Daten). */
+/** Beschriftung der Y-Achse im Anmeldungs-LineChart: Anmeldezahl je Kanal in Klammern. */
+export const registrationsYAxisLabel: Record<RegistrationsChannelMode, string> = {
+  online: "Anmeldungen (Online)",
+  onsite: "Anmeldungen (Vor Ort)",
+  total: "Anmeldungen (Gesamt)",
+};
+
+/** Liefert den Kanal; gibt es keine Vor-Ort-Daten und ist der Modus «onsite», wird «online» geliefert. */
 export function resolveRegistrationsChannelMode(
   mode: RegistrationsChannelMode,
   onsitePossible: boolean
@@ -19,22 +27,24 @@ export function resolveRegistrationsChannelMode(
   return !onsitePossible && mode === "onsite" ? "online" : mode;
 }
 
+/** Tooltip für die pro-Woche-Kurve: Wochen vor Konferenzbeginn (X-Wert) und Anmeldezahl im Intervall. */
 export function formatRegistrationsWeeklyHoverCaption(weeks: number, val: number): string {
   const w = String(Math.round(weeks));
   return `Woche ${w}: ${formatRegistrationsCountDe(val)}`;
 }
 
-/** Kumulativa zum Stützpunkt `weeksBefore` (nicht Zuwächse). */
+/** Tooltip-Zeile für die kumulierte Ansicht: Abstand in Wochen zum Konferenzbeginn und kumulierter Stand. */
 export function formatRegistrationsCumulativeHoverCaption(weeks: number, val: number): string {
   const w = String(Math.round(weeks));
   return `${w} Wochen · kumuliert ${formatRegistrationsCountDe(val)}`;
 }
 
+/** True, wenn mindestens ein Messpunkt vor Konferenzbeginn einen gesetzten Vor-Ort-Wert hat. */
 export function registrationsHasAnyOnsite(events: readonly RegistrationsEventSerie[]): boolean {
   return events.some((ev) => ev.points.some((p) => p.onsite != null && p.weeksBefore >= 0));
 }
 
-/** Zählerstand pro Kanal (für Kumulativa oder Tag-zu-Tag-Differenz). */
+/** Anmeldezählerstand eines Zeitpunkts: online, vor Ort oder Summe aus beiden. */
 export function registrationsChannelValue(mode: RegistrationsChannelMode, p: RegistrationsPoint): number {
   if (mode === "online") {
     return p.online;
