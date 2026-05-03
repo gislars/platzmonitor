@@ -18,14 +18,14 @@ export interface Entry {
   groupId: string;
   availability: Availability;
   status: EntryStatus;
-  /** ISO 8601, für Sortierung (optional) */
+  /** Sortierzeitpunkt (ISO 8601), optional. */
   sortAt?: string | null;
-  /** Pretalx-Session-Code bei Titel-Match im Schedule; sonst null/undefined */
+  /** Pretalx-Sessionkennung aus dem Schedule, falls zugeordnet. */
   pretalxCode?: string | null;
   waitingListEnabled?: boolean;
-  /** null, wenn pretix-Warteliste nicht abrufbar (z. B. fehlende Token-Rechte) */
+  /** Wartelistenlänge aus pretix oder null, wenn nicht lieferbar. */
   waitingListCount?: number | null;
-  /** Bei unlimited: kumulativ gebucht laut Transaktions-Timeline (vom Backend angereichert). */
+  /** Kumulativ gebuchte Plätze (Transaktionstimeline) bei unlimited-Kontingent. */
   transactionBooked?: number | null;
 }
 
@@ -61,7 +61,7 @@ export interface HistoryResponse {
   series: HistorySeries[];
 }
 
-/** Kumulativa aus pretix-Transaktionen (Workshop/Exkursion), Backend /booking-timeline */
+/** Ein Punkt der Buchungs-Timeline (tägliche Stufen, pretix-Transaktionen). */
 export interface BookingTimelinePoint {
   t: number;
   booked: number;

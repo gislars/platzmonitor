@@ -32,7 +32,7 @@ function buildAbsoluteUrl(pathWithLeadingSlash: string): string {
   return new URL(pathRelative, baseNormalized).toString();
 }
 
-/** Relativen API-Pfad oder absolute URL fuer URLSearchParams in eine URL verwandeln (ohne new URL(Relativ)). */
+/** Baut eine schreibbare `URL` aus relativem API-Pfad oder absoluter Adresse (Basis: Fenster oder localhost). */
 function urlForWritableSearchParams(apiPathBuilt: string): URL {
   if (apiPathBuilt.startsWith("http://") || apiPathBuilt.startsWith("https://")) {
     return new URL(apiPathBuilt);
@@ -71,11 +71,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-/**
- * Nur Vite-Dev: setzt Warteliste am ersten Eintrag (Reihenfolge wie API), um die Anzeige zu pruefen.
- * Endliche UND unbegrenzte Kontingente (pretix oft ohne size = unlimited) sind erlaubt.
- * In `frontend/.env` z. B. `VITE_SIMULATE_WAITLIST=4`, dann nur `pnpm dev` neu starten (nicht das Backend).
- */
+/** Nur Dev: `VITE_SIMULATE_WAITLIST` setzt am ersten Eintrag eine Test-Warteliste. */
 function applySimulateWaitlist(data: AvailabilityResponse): AvailabilityResponse {
   if (!import.meta.env.DEV) {
     return data;
@@ -139,7 +135,7 @@ export async function fetchRegistrations(): Promise<RegistrationsResponse> {
   return fetchJson(buildAbsoluteUrl(REG_PATH));
 }
 
-/** Kumulativa gebucht aus pretix-Transaktionen (tägliche Stufen UTC), fuer Workshop-Detail. */
+/** Lädt die Buchungs-Timeline (tägliche kumulierte Plätze) für eine Quota. */
 export async function fetchBookingTimeline(
   quotaId: string,
   opts?: { signal?: AbortSignal }

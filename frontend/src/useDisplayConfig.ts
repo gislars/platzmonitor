@@ -193,7 +193,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_COLS, String(v));
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -203,7 +202,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_ROWS, String(v));
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -213,7 +211,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_ROTATION, String(v));
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -223,7 +220,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_POLL, String(v));
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -233,7 +229,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_MAX_GROUP_COLS, String(v));
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -242,7 +237,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_GROUP_ROTATION_MODE, m);
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -251,7 +245,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_HIDE_EMPTY, v ? "1" : "0");
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -260,7 +253,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_HIDE_SOLD_OUT, v ? "1" : "0");
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -269,7 +261,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_HIDE_PAST, v ? "1" : "0");
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -284,7 +275,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_VIEW_MODE, m);
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -293,7 +283,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_STATS_TAB, t);
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -302,7 +291,6 @@ export function useDisplayConfig() {
     try {
       localStorage.setItem(LS_STATS_TAB_AUTOROTATE, v ? "1" : "0");
     } catch {
-      /* Fehler ignorieren */
     }
   }, []);
 
@@ -336,11 +324,10 @@ export function useDisplayConfig() {
       localStorage.removeItem(LS_STATS_TAB);
       localStorage.removeItem(LS_STATS_TAB_AUTOROTATE);
     } catch {
-      /* Fehler ignorieren */
     }
   }, [defaults]);
 
-  /** Für alle Kachel-Raster: min(eingestellte Spalten, max. Gruppenspalten). */
+  /** Effektive Spaltenzahl: eingestellter Wert begrenzt durch `maxGroupColumns`. */
   const effectiveCols = Math.max(MIN_TILE_DIM, Math.min(cols, maxGroupColumns));
   const effectiveRows = Math.max(MIN_TILE_DIM, rows);
   const tilesPerPage = effectiveCols * effectiveRows;

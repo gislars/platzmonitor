@@ -12,7 +12,7 @@ function finiteCapacityTotal(entry: Entry): number | null {
   return entry.availability.kind === "finite" && entry.availability.total != null ? entry.availability.total : null;
 }
 
-/** Anteil der Schienenbreite (Kapazitaet bzw. gebucht); darf ueber 100 gehen. */
+/** Prozentanteil der Schiene (0–100+, Werte über 100 bei Überbuchung möglich). */
 function ratio100AllowOver(v: number, max: number): number {
   if (!(max > 1e-9)) {
     return 0;
@@ -20,6 +20,7 @@ function ratio100AllowOver(v: number, max: number): number {
   return Math.max(0, (v / max) * 100);
 }
 
+/** Maximale endliche Kapazität in der Liste (Skalierung der Balken mit fester Obergrenze). */
 function chartMaxFiniteCap(entries: readonly Entry[]): number {
   let m = 0;
   let any = false;
@@ -33,7 +34,7 @@ function chartMaxFiniteCap(entries: readonly Entry[]): number {
   return any ? Math.max(1, m) : 1;
 }
 
-/** Skala fuer Zeilen ohne endliche Kapazitaet: max. gebuchte Menge unter diesen Eintraegen. */
+/** Obergrenze für Balkenlänge bei Einträgen ohne endliche Kapazität (max. gebucht). */
 function chartMaxBookedWithoutFiniteCap(entries: readonly Entry[]): number {
   let m = 0;
   let any = false;
@@ -47,7 +48,7 @@ function chartMaxBookedWithoutFiniteCap(entries: readonly Entry[]): number {
   return any ? Math.max(1, m) : 1;
 }
 
-/** Kurzliste für zusammengebundene Angebote (z. B. Mehrteil). */
+/** Balken je Eintrag: frei, gebucht, Warteliste; optional Klick für Details. */
 export function BookingBarChart({ entries, kiosk, onOpenEntryDetail }: Props) {
   const fmt = formatRegistrationsCountDe;
 

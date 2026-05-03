@@ -11,7 +11,7 @@ import { RegistrationsWeeklyTile } from "./RegistrationsWeeklyTile";
 
 const REGISTRATIONS_CHART_PAGE_KEYS: ("weekly" | "cumulative")[] = ["weekly", "cumulative"];
 
-/** Gruppe «excursions» laut Backend-Standardsatz; eigene IDs in GROUP_RULES bitte ebenfalls verwenden. */
+/** Trennt Einträge der Gruppe «excursions» von übrigen Workshops für die Statistik-Charts. */
 function splitBookingHistoryEntries(groups: readonly Group[]): {
   excursionEntries: Entry[];
   workshopEntries: Entry[];
@@ -34,14 +34,14 @@ function splitBookingHistoryEntries(groups: readonly Group[]): {
 type Props = {
   displayConfig: DisplayConfigState;
   kiosk: boolean;
-  /** Verfügbarkeitszeitstempel (pretix) für Begleitprogramm-Balken. */
+  /** Zeitstempel der Verfügbarkeitsdaten (pretix) für Balkendiagramme. */
   availabilityFetchedAt?: string | null;
-  /** Antwortzeit der Registrierungsaggregation für Anmeldungsdiagramme. */
+  /** Zeitstempel der Registrierungsaggregation für Anmeldungsdiagramme. */
   registrationsFetchedAt?: string | null;
   visibleGroups: Group[];
   registrations: RegistrationsResponse | null;
   statsError: string | null;
-  /** Beide Statistik-APIs down: kein roter Banner, Hinweis nur im Dashboard-Kopf */
+  /** Statistik-APIs nicht erreichbar: Hinweis im Kopfbereich statt rotem Tab-Banner. */
   statsServerUnreachable?: boolean;
   globalPageIndex: number;
   onGlobalPageSelect: (index: number) => void;

@@ -1,11 +1,11 @@
 import type { RegistrationsEventSerie, RegistrationsPoint } from "./types";
 
-/** Nur Messpunkte mit `weeksBefore` ≥ 0, also bis zum Konferenzbeginn. */
+/** Messpunkte mit `weeksBefore` ≥ 0 (Zeitraum bis zum Konferenzbeginn). */
 export function pointsThroughConferenceStart(pts: readonly RegistrationsPoint[]): RegistrationsPoint[] {
   return pts.filter((p) => p.weeksBefore >= 0);
 }
 
-/** Ganzzahl für deutsche Tausendertrennzeichen, ohne Nachkommastellen. */
+/** Ganzzahl mit de-DE-Tausendertrennzeichen. */
 export function formatRegistrationsCountDe(n: number): string {
   return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n));
 }
@@ -19,7 +19,7 @@ export const registrationsYAxisLabel: Record<RegistrationsChannelMode, string> =
   total: "Anmeldungen (Gesamt)",
 };
 
-/** Liefert den Kanal; gibt es keine Vor-Ort-Daten und ist der Modus «onsite», wird «online» geliefert. */
+/** Mappt Kanal «onsite» auf «online», wenn keine Vor-Ort-Daten vorliegen. */
 export function resolveRegistrationsChannelMode(
   mode: RegistrationsChannelMode,
   onsitePossible: boolean
@@ -39,7 +39,7 @@ export function formatRegistrationsCumulativeHoverCaption(weeks: number, val: nu
   return `${w} Wochen · kumuliert ${formatRegistrationsCountDe(val)}`;
 }
 
-/** True, wenn mindestens ein Messpunkt vor Konferenzbeginn einen gesetzten Vor-Ort-Wert hat. */
+/** Prüft, ob irgendwo Onsite-Werte vor Konferenzbeginn vorkommen. */
 export function registrationsHasAnyOnsite(events: readonly RegistrationsEventSerie[]): boolean {
   return events.some((ev) => ev.points.some((p) => p.onsite != null && p.weeksBefore >= 0));
 }

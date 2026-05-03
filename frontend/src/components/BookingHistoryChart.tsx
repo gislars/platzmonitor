@@ -5,7 +5,7 @@ import { ChartStandInline } from "./ChartStandInline";
 
 type Props = {
   title: string;
-  /** ISO-Zeit der Verfügbarkeitsdaten (pretix-Schnappschuss für die Balken). */
+  /** Zeitstempel der pretix-Verfügbarkeit für die Balken (ISO). */
   standIso?: string | null;
   subtitle?: string;
   entries: Entry[];

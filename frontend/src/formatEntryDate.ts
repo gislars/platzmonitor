@@ -1,4 +1,4 @@
-/** Wochentag, Datum und optional Uhrzeit für Kacheln (`de-DE`). */
+/** Formatiert ISO-Zeit für Kacheln (Wochentag, Datum, Uhrzeit, de-DE). */
 export function formatEntrySortAt(iso: string | null | undefined): string {
   if (iso == null || iso === "") {
     return "Termin offen";

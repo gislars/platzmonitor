@@ -7,6 +7,7 @@ import {
 } from "../../registrationCharts";
 import { useChartWidth } from "../../useChartWidth";
 
+/** Breite, Kanalwahl und Chartmodus für die Anmeldungs-LineCharts. */
 export function useRegistrationsTileChartSetup(events: RegistrationsEventSerie[]) {
   const chartW = useChartWidth(820, 56);
 

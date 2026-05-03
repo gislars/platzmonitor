@@ -1,4 +1,4 @@
-/** Zerlegt `items` in Blöcke der Länge `size` (mindestens 1). */
+/** Teilt `items` in aufeinanderfolgende Blöcke der Länge `size` (mindestens 1). */
 export function chunkArray<T>(items: T[], size: number): T[][] {
   const s = Math.max(1, Math.floor(size));
   if (items.length === 0) {

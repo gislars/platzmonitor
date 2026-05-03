@@ -1,4 +1,4 @@
-/** Kurzes de-DE Datum und Uhrzeit für UI-Zeilen wie „Stand: …“. */
+/** ISO-Zeitstempel als kurzes Datum und Uhrzeit (de-DE), z. B. für «Stand». */
 export function formatFetchedDeShort(iso: string): string {
   try {
     const d = new Date(iso);

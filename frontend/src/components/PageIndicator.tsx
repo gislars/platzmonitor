@@ -1,13 +1,13 @@
 type Props = {
-  /** Anzahl Seiten (mindestens 1). */
+  /** Seitenzahl (≥ 1). */
   total: number;
-  /** Aktive Seite, 0-basiert. */
+  /** Index der aktiven Seite (ab 0). */
   current: number;
-  /** Wenn gesetzt, sind die Segmente per Maus und Tastatur wählbar. */
+  /** Optional: Seitenwechsel per Maus oder Tastatur. */
   onSelectPage?: (index: number) => void;
 };
 
-/** Schmale Linien-Segmente: aktives Segment hervorgehoben. */
+/** Seitenwahl als schmale Balken, aktive Seite hervorgehoben. */
 export function PageIndicator({ total, current, onSelectPage }: Props) {
   const n = Math.max(1, total);
   const active = Math.min(Math.max(0, current), n - 1);
