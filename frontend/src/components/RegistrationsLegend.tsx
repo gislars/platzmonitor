@@ -6,6 +6,14 @@ type Props = {
   emphasizedEventSlug: string;
 };
 
+function legendYearLabel(ev: RegistrationsEventSerie): string {
+  const m = /(?:^|[^0-9])(20[0-9]{2}|19[0-9]{2})(?:[^0-9]|$)/.exec(ev.slug);
+  if (m && m[1]) {
+    return m[1];
+  }
+  return ev.slug;
+}
+
 export function RegistrationsLegend({ events, emphasizedEventSlug }: Props) {
   if (events.length === 0) {
     return null;
@@ -25,7 +33,7 @@ export function RegistrationsLegend({ events, emphasizedEventSlug }: Props) {
             }}
             aria-hidden
           />
-          <span className="stat-reg-legend__label">{ev.label}</span>
+          <span className="stat-reg-legend__label">{legendYearLabel(ev)}</span>
         </li>
       ))}
     </ul>

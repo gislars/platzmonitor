@@ -39,12 +39,10 @@ class GroupRule(BaseModel):
     match: MatchSpec
 
 
+# Workshops werden ueber den Pretalx-Schedule (Slot-Typ / Raum) klassifiziert.
+# Optional kann in GROUP_RULES_JSON weiterhin eine Regel id "workshops" nur fuer
+# die Anzeige-``title`` der Gruppe genutzt werden (``match`` wird ignoriert).
 DEFAULT_GROUP_RULES: list[dict[str, Any]] = [
-    {
-        "id": "workshops",
-        "title": "Workshops",
-        "match": {"type": "prefix", "value": "WS"},
-    },
     {
         "id": "excursions",
         "title": "Exkursionen",

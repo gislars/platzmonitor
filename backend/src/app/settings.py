@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     )
     organizer: str = Field(default="fossgis", alias="ORGANIZER")
     event: str = Field(default="2026", alias="EVENT")
+    events_json: str = Field(
+        default="",
+        alias="EVENTS_JSON",
+        description=(
+            "JSON-Liste verfuegbarer Events fuer Multi-Jahr-Betrieb. "
+            "Eintrag: {slug,title?,start_date,end_date}. end_date wird fuer Freeze genutzt."
+        ),
+    )
     frontend_origin: str = Field(default="", alias="FRONTEND_ORIGIN")
     frontend_origin_regex: str = Field(default="", alias="FRONTEND_ORIGIN_REGEX")
     docs_enabled: bool = Field(
@@ -71,7 +79,10 @@ class Settings(BaseSettings):
     group_rules_json: str = Field(
         default="",
         alias="GROUP_RULES_JSON",
-        description="JSON-Liste von Gruppenregeln; leer = Standard (Workshops, Exkursionen)",
+        description=(
+            "JSON-Liste von Gruppenregeln (z. B. Exkursionen). "
+            "Workshops kommen nur aus Pretalx; optional id workshops nur fuer Gruppentitel."
+        ),
     )
     group_unmatched_behavior: Literal["drop", "other"] = Field(
         default="drop",

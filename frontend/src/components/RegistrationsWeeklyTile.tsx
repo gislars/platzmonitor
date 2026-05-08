@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
+import type { EmbedChartQuery } from "../chartEmbed";
 import {
   formatRegistrationsWeeklyHoverCaption,
   formatRegistrationsCountDe,
@@ -9,16 +10,23 @@ import {
 } from "../registrationCharts";
 import type { RegistrationsEventSerie } from "../types";
 import { registrationsSeriesStrokeColor } from "../statisticsPalette";
+import { ChartExportMenu } from "./ChartExportMenu";
 import { ChartStandInline } from "./ChartStandInline";
 import type { LineSeries } from "./LineChart";
 import { LineChart } from "./LineChart";
-import { useRegistrationsTileChartSetup } from "./registrationsCharts/useRegistrationsTileChartSetup";
+import {
+  REGISTRATIONS_LINE_CHART_PAD_R,
+  useRegistrationsTileChartSetup,
+} from "./registrationsCharts/useRegistrationsTileChartSetup";
 import { RegistrationsChannelModePicker } from "./RegistrationsChannelModePicker";
 
 type Props = {
   events: RegistrationsEventSerie[];
   emphasizedEventSlug: string;
   standIso?: string | null;
+  kiosk?: boolean;
+  showChartExportMenu?: boolean;
+  compactForEmbed?: boolean;
 };
 
 function parseDay(iso: string): number {
@@ -64,12 +72,20 @@ function buildWeeklySeriesForMode(
   });
 }
 
+const WEEKLY_EMBED: EmbedChartQuery = "reg-weekly";
+
 export function RegistrationsWeeklyTile({
   events,
   emphasizedEventSlug,
   standIso,
+  kiosk = false,
+  showChartExportMenu = true,
+  compactForEmbed = false,
 }: Props) {
-  const { chartW, onsitePossible, chartMode, setMode } = useRegistrationsTileChartSetup(events);
+  const captureRef = useRef<HTMLDivElement | null>(null);
+  const { chartW, lineChartHeadPadRFraction, onsitePossible, chartMode, setMode } =
+    useRegistrationsTileChartSetup(events);
+  const plotHeight = compactForEmbed ? 280 : 300;
 
   const series = useMemo(
     () => buildWeeklySeriesForMode(events, emphasizedEventSlug, chartMode),
@@ -78,42 +94,61 @@ export function RegistrationsWeeklyTile({
   const hasData = series.some((s) => s.points.length > 0);
 
   return (
-    <section className="stat-reg-chart" aria-labelledby="stat-reg-week-title">
-      <div className="stat-reg-chart__head">
-        <h3 id="stat-reg-week-title" className="stat-reg-chart__title">
-          FOSSGIS Anmeldungen pro Woche
-          {" "}
-          <ChartStandInline iso={standIso} />
-        </h3>
-        <RegistrationsChannelModePicker
-          mode={chartMode}
-          onChange={setMode}
-          onsitePossible={onsitePossible}
-          ariaLabel="Kanal nach Woche"
-        />
-      </div>
-      {hasData ? (
-        <LineChart
-          key={chartMode}
-          series={series}
-          width={chartW}
-          height={300}
-          xLabel="Wochen vor Konferenzbeginn"
-          yLabel={registrationsYAxisLabel[chartMode]}
-          invertX
-          formatXTick={(w) => String(Math.round(w))}
-          formatY={formatRegistrationsCountDe}
-          formatHoverBody={(weeks, val) => formatRegistrationsWeeklyHoverCaption(weeks, val)}
-          hoverSnapToNearestX
-          selectableSeries={series.length > 1}
-        />
-      ) : (
-        <p className="stat-reg-chart__empty">
-          {chartMode === "onsite"
-            ? "Keine vor-Ort-Verlaufsdaten für Zuordnung."
-            : "Keine auswertbaren Wochen-Zuwächse."}
-        </p>
-      )}
-    </section>
+    <div ref={captureRef} className="chart-capture-root">
+      <section
+        className="stat-reg-chart stat-reg-chart--registrations-line"
+        aria-labelledby="stat-reg-week-title"
+        style={{ "--stat-reg-plot-pad-r-fr": String(lineChartHeadPadRFraction) } as CSSProperties}
+      >
+        <div className="stat-reg-chart__head">
+          <h3 id="stat-reg-week-title" className="stat-reg-chart__title">
+            FOSSGIS Anmeldungen pro Woche
+            {" "}
+            <ChartStandInline iso={standIso} />
+          </h3>
+          <div className="stat-reg-chart__head-tools">
+            {showChartExportMenu ? (
+              <ChartExportMenu
+                captureRef={captureRef}
+                fileNameBase="FOSSGIS-Anmeldungen-pro-Woche"
+                embedChart={WEEKLY_EMBED}
+                event={emphasizedEventSlug}
+                hidden={kiosk}
+                disabled={!hasData}
+              />
+            ) : null}
+            <RegistrationsChannelModePicker
+              mode={chartMode}
+              onChange={setMode}
+              onsitePossible={onsitePossible}
+              ariaLabel="Kanal nach Woche"
+            />
+          </div>
+        </div>
+        {hasData ? (
+          <LineChart
+            key={chartMode}
+            series={series}
+            width={chartW}
+            padR={REGISTRATIONS_LINE_CHART_PAD_R}
+            height={plotHeight}
+            xLabel="Wochen vor Konferenzbeginn"
+            yLabel={registrationsYAxisLabel[chartMode]}
+            invertX
+            formatXTick={(w) => String(Math.round(w))}
+            formatY={formatRegistrationsCountDe}
+            formatHoverBody={(weeks, val) => formatRegistrationsWeeklyHoverCaption(weeks, val)}
+            hoverSnapToNearestX
+            selectableSeries={series.length > 1}
+          />
+        ) : (
+          <p className="stat-reg-chart__empty">
+            {chartMode === "onsite"
+              ? "Keine vor-Ort-Verlaufsdaten für Zuordnung."
+              : "Keine auswertbaren Wochen-Zuwächse."}
+          </p>
+        )}
+      </section>
+    </div>
   );
 }

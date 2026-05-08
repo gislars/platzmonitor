@@ -12,6 +12,7 @@ const AVAILABILITY_PATH = "/api/v1/availability";
 const HISTORY_PATH = "/api/v1/history";
 const REG_PATH = "/api/v1/registrations";
 const BOOKING_TIMELINE_PATH = "/api/v1/booking-timeline";
+const EVENTS_PATH = "/api/v1/events";
 
 function isAbortError(e: unknown): boolean {
   if (e instanceof DOMException && e.name === "AbortError") {
@@ -108,8 +109,10 @@ function applySimulateWaitlist(data: AvailabilityResponse): AvailabilityResponse
   return { ...data, groups };
 }
 
-export async function fetchAvailability(): Promise<AvailabilityResponse> {
-  const data = await fetchJson<AvailabilityResponse>(buildAbsoluteUrl(AVAILABILITY_PATH));
+export async function fetchAvailabilityForEvent(event: string): Promise<AvailabilityResponse> {
+  const u = urlForWritableSearchParams(buildAbsoluteUrl(AVAILABILITY_PATH));
+  u.searchParams.set("event", event);
+  const data = await fetchJson<AvailabilityResponse>(u.toString());
   return applySimulateWaitlist(data);
 }
 
@@ -131,17 +134,44 @@ export async function fetchHistory(opts?: {
   return fetchJson(u.toString());
 }
 
-export async function fetchRegistrations(): Promise<RegistrationsResponse> {
-  return fetchJson(buildAbsoluteUrl(REG_PATH));
+export async function fetchRegistrationsForEvent(
+  event: string,
+  opts?: { include?: string }
+): Promise<RegistrationsResponse> {
+  const u = urlForWritableSearchParams(buildAbsoluteUrl(REG_PATH));
+  u.searchParams.set("event", event);
+  if (opts?.include && opts.include.trim()) {
+    u.searchParams.set("include", opts.include.trim());
+  }
+  return fetchJson(u.toString());
+}
+
+export type EventsCatalogEntry = {
+  slug: string;
+  title?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+};
+
+export type EventsCatalogResponse = {
+  fetchedAt: string;
+  events: EventsCatalogEntry[];
+};
+
+export async function fetchEventsCatalog(): Promise<EventsCatalogResponse> {
+  return fetchJson(buildAbsoluteUrl(EVENTS_PATH));
 }
 
 /** Lädt die Buchungs-Timeline (tägliche kumulierte Plätze) für eine Quota. */
 export async function fetchBookingTimeline(
   quotaId: string,
-  opts?: { signal?: AbortSignal }
+  opts?: { event?: string; signal?: AbortSignal }
 ): Promise<BookingTimelineResponse> {
   const timeoutMs = getFetchTimeoutMs();
   const u = urlForWritableSearchParams(buildAbsoluteUrl(BOOKING_TIMELINE_PATH));
+  if (opts?.event) {
+    u.searchParams.set("event", opts.event);
+  }
   u.searchParams.set("quotaIds", quotaId);
   let r: Response;
   try {

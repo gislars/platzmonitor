@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
-import { fetchAvailability, fetchRegistrations } from "../api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fetchAvailabilityForEvent, fetchRegistrationsForEvent } from "../api";
 import {
   isUnreachableApiErrorMessage,
   summarizeStatisticsFetchErrors,
 } from "../apiErrors";
-import { getRegistrationsPollIntervalMs } from "../config";
+import { getRegistrationsPollIntervalMs, type StatisticsTab } from "../config";
 import { getKioskMode } from "../kiosk";
 import { isEntryStartInFutureOrNow } from "../entryStartTime";
 import { sortEntriesByDateTimeAsc } from "../sortEntries";
@@ -13,8 +12,28 @@ import type { AvailabilityResponse, Entry, RegistrationsResponse } from "../type
 import { useDisplayConfig } from "../useDisplayConfig";
 import { BookingDetailDialog } from "./BookingDetailDialog";
 import { ConfigPanel } from "./ConfigPanel";
+import { DashboardMasthead } from "./DashboardMasthead";
 import { GroupSection } from "./GroupSection";
+import { StatSubTabsNav } from "./StatSubTabsNav";
 import { StatisticsView } from "./StatisticsView";
+
+/** Sweep-Schicht (echtes DOM, kein ::after): eine Iteration = pollMs, Start = Aufruf load(). */
+function resetHelpSweepAnimation(layerEl: HTMLElement | null): void {
+  if (!layerEl?.getAnimations) {
+    return;
+  }
+  const apply = (): void => {
+    try {
+      for (const anim of layerEl.getAnimations()) {
+        anim.currentTime = 0;
+      }
+    } catch {
+      /* getAnimations optional in alten Engines */
+    }
+  };
+  apply();
+  requestAnimationFrame(apply);
+}
 
 export function Dashboard() {
   const displayConfig = useDisplayConfig();
@@ -30,45 +49,68 @@ export function Dashboard() {
 
   const [globalPageIndex, setGlobalPageIndex] = useState(0);
 
+  const helpSweepRef = useRef<HTMLSpanElement | null>(null);
+
   const load = useCallback(async () => {
-    setError(null);
+    const ev = (displayConfig.eventSlug || "").trim();
+    if (!ev) {
+      // Jahr noch nicht bestimmt (Events-Katalog wird erst geladen).
+      return;
+    }
+    resetHelpSweepAnimation(helpSweepRef.current);
     try {
-      const res = await fetchAvailability();
+      const res = await fetchAvailabilityForEvent(ev);
+      setError(null);
       setData(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unbekannter Fehler");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [displayConfig.eventSlug]);
 
   useEffect(() => {
+    const ev = (displayConfig.eventSlug || "").trim();
+    if (!ev) {
+      return;
+    }
+    setLoading(true);
     void load();
     const id = window.setInterval(() => void load(), displayConfig.pollMs);
     return () => window.clearInterval(id);
-  }, [load, displayConfig.pollMs]);
+  }, [displayConfig.eventSlug, load, displayConfig.pollMs]);
 
   const loadRegistrationsStats = useCallback(async () => {
+    const ev = (displayConfig.eventSlug || "").trim();
+    if (!ev) {
+      return;
+    }
     try {
-      const r = await fetchRegistrations();
+      const r = await fetchRegistrationsForEvent(ev, {
+        include: displayConfig.registrationsIncludePrevious ? "previous" : undefined,
+      });
       setRegistrations(r);
       setStatsRegistrationsError(null);
     } catch (e) {
       setStatsRegistrationsError(e instanceof Error ? e.message : "Unbekannter Fehler");
     }
-  }, []);
+  }, [displayConfig.eventSlug, displayConfig.registrationsIncludePrevious]);
 
   useEffect(() => {
     if (displayConfig.viewMode !== "statistics") {
       return;
     }
     void loadRegistrationsStats();
-    const id = window.setInterval(
-      () => void loadRegistrationsStats(),
-      getRegistrationsPollIntervalMs()
-    );
+    const pollMs =
+      statsRegistrationsError !== null ? displayConfig.pollMs : getRegistrationsPollIntervalMs();
+    const id = window.setInterval(() => void loadRegistrationsStats(), pollMs);
     return () => window.clearInterval(id);
-  }, [displayConfig.viewMode, loadRegistrationsStats]);
+  }, [
+    displayConfig.pollMs,
+    displayConfig.viewMode,
+    loadRegistrationsStats,
+    statsRegistrationsError,
+  ]);
 
   const statsFetchSummary = useMemo(
     () => summarizeStatisticsFetchErrors(statsRegistrationsError),
@@ -153,62 +195,121 @@ export function Dashboard() {
 
   const rootClass = kiosk ? "dashboard dashboard--kiosk" : "dashboard";
 
+  // Wenn die Verfuegbarkeits-API wieder erreichbar ist, aber die Registrierungen wegen
+  // vorherigem Offline-Fehler noch als "nicht erreichbar" markiert sind, dann einmal
+  // sofort nachladen statt bis zum (ggf. sehr langen) Registrierungs-Poll zu warten.
+  useEffect(() => {
+    if (displayConfig.viewMode !== "statistics") {
+      return;
+    }
+    if (availabilityUnreachable) {
+      return;
+    }
+    if (!statsFetchSummary.showHeaderUnreachableHint) {
+      return;
+    }
+    void loadRegistrationsStats();
+  }, [
+    availabilityUnreachable,
+    displayConfig.viewMode,
+    loadRegistrationsStats,
+    statsFetchSummary.showHeaderUnreachableHint,
+  ]);
+
   const groupsStyle = {
     gridTemplateColumns: `repeat(${groupGridColumns}, minmax(0, 1fr))`,
   } as const;
 
+  const tagline = displayConfig.viewMode === "tiles" ? "Freie Plätze" : "Statistik";
+
+  // Statistik-Tabs (Begleitprogramm / Anmeldungen) nur im Statistik-Modus anzeigen.
+  // Im Modul "Freie Plätze" gibt es aktuell keine Diagramm-Kategorien, daher keine Tabs.
+  const showStatShell = displayConfig.viewMode === "statistics";
+
+  const viewMode = displayConfig.viewMode;
+  const setViewMode = displayConfig.setViewMode;
+  const setStatisticsTab = displayConfig.setStatisticsTab;
+
+  const selectStatTab = useCallback(
+    (t: StatisticsTab) => {
+      if (viewMode === "tiles") {
+        setViewMode("statistics");
+      }
+      setStatisticsTab(t);
+    },
+    [viewMode, setViewMode, setStatisticsTab]
+  );
+
+  const statTabButtonsDisabled =
+    kiosk &&
+    displayConfig.statsTabAutoRotate &&
+    displayConfig.viewMode === "statistics";
+
+  const helpBubbleText = useMemo(
+    () =>
+      displayConfig.viewMode === "tiles"
+        ? displayConfig.helpBubbleTiles
+        : displayConfig.helpBubbleStatistics,
+    [displayConfig.viewMode, displayConfig.helpBubbleTiles, displayConfig.helpBubbleStatistics]
+  );
+
   return (
     <div className={rootClass}>
-      <header className="dashboard__header">
-        <div className="dashboard__header-lead" aria-hidden="true" />
-        <div className="dashboard__header-center">
-          <h1 className="dashboard__title">{eventTitle}</h1>
-          <p className="dashboard__tagline">
-            {displayConfig.viewMode === "tiles" ? "Freie Plätze" : "Statistik"}
-          </p>
-          {displayConfig.viewMode === "tiles" ? (
-            <p
-              className="dashboard__help"
-              style={
-                {
-                  "--dashboard-help-rotation-ms": `${displayConfig.pageRotationMs}ms`,
-                } as CSSProperties
+      <DashboardMasthead
+        eventTitle={eventTitle}
+        tagline={tagline}
+        helpText={helpBubbleText}
+        pollMs={displayConfig.pollMs}
+        kiosk={kiosk}
+        onRefresh={() => void load()}
+        showConnectivityHint={showConnectivityHint}
+        helpSweepRef={helpSweepRef}
+      />
+
+      {showStatShell ? (
+        <div className="dashboard__statistics">
+          <StatSubTabsNav
+            activeTab={displayConfig.statisticsTab}
+            onSelectTab={selectStatTab}
+            tabButtonsDisabled={statTabButtonsDisabled}
+          />
+          {displayConfig.viewMode === "statistics" ? (
+            <StatisticsView
+              displayConfig={displayConfig}
+              kiosk={kiosk}
+              event={
+                displayConfig.eventSlug && displayConfig.eventSlug.trim()
+                  ? displayConfig.eventSlug.trim()
+                  : data?.event.slug ?? ""
               }
-            >
-              <span className="dashboard__help-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 16v-4M12 8h.01M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              <span className="dashboard__help-text">Buchungen sind am Help-Desk möglich.</span>
-            </p>
-          ) : null}
-          {showConnectivityHint ? (
-            <p className="dashboard__sub" role="status">
-              Keine Verbindung<span className="dashboard__sub-hint"> zum Server</span>
-            </p>
+              availabilityFetchedAt={availabilityFetchedAt}
+              registrationsFetchedAt={registrationsFetchedAt}
+              visibleGroups={visibleGroups}
+              registrations={registrations}
+              statsError={statsFetchSummary.bannerMessage}
+              statsServerUnreachable={statsFetchSummary.showHeaderUnreachableHint}
+              globalPageIndex={globalPageIndex}
+              onGlobalPageSelect={setGlobalPageIndex}
+              onOpenEntryDetail={setDetailEntry}
+            />
           ) : null}
         </div>
-        <div className="dashboard__header-actions">
-          {!kiosk ? (
-            <button type="button" className="dashboard__refresh" onClick={() => void load()}>
-              Aktualisieren
-            </button>
-          ) : null}
-        </div>
-      </header>
+      ) : null}
 
       {loading && !data && (
         <p className="dashboard__state" role="status">
-          Daten werden geladen …
+          {(displayConfig.eventSlug || "").trim()
+            ? "Daten werden geladen …"
+            : "Jahr wird geladen …"}
         </p>
       )}
+
+      {!loading && !data && !(displayConfig.eventSlug || "").trim() ? (
+        <p className="dashboard__state dashboard__state--error" role="alert">
+          Kein Jahr konfiguriert. Bitte in den Einstellungen ein Jahr waehlen oder im Backend{" "}
+          <code>EVENTS_JSON</code> setzen.
+        </p>
+      ) : null}
 
       {error !== null && !availabilityUnreachable && (
         <p className="dashboard__state dashboard__state--error" role="alert">
@@ -216,7 +317,7 @@ export function Dashboard() {
         </p>
       )}
 
-      {data && !hasEntries && !error && (
+      {displayConfig.viewMode === "tiles" && data && !hasEntries && !error && (
         <p className="dashboard__state">
           Keine passenden Angebote (Filter) oder keine freien Einträge.
         </p>
@@ -243,23 +344,15 @@ export function Dashboard() {
         </div>
       ) : null}
 
-      {displayConfig.viewMode === "statistics" ? (
-        <StatisticsView
-          displayConfig={displayConfig}
-          kiosk={kiosk}
-          availabilityFetchedAt={availabilityFetchedAt}
-          registrationsFetchedAt={registrationsFetchedAt}
-          visibleGroups={visibleGroups}
-          registrations={registrations}
-          statsError={statsFetchSummary.bannerMessage}
-          statsServerUnreachable={statsFetchSummary.showHeaderUnreachableHint}
-          globalPageIndex={globalPageIndex}
-          onGlobalPageSelect={setGlobalPageIndex}
-          onOpenEntryDetail={setDetailEntry}
-        />
-      ) : null}
-
-      <BookingDetailDialog entry={detailEntry} onClose={() => setDetailEntry(null)} />
+      <BookingDetailDialog
+        entry={detailEntry}
+        event={
+          displayConfig.eventSlug && displayConfig.eventSlug.trim()
+            ? displayConfig.eventSlug.trim()
+            : data?.event.slug ?? ""
+        }
+        onClose={() => setDetailEntry(null)}
+      />
 
       {!kiosk ? <ConfigPanel config={displayConfig} /> : null}
     </div>

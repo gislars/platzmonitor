@@ -11,6 +11,7 @@ from app.logging_config import configure_logging
 from app.logging_utils import safe_url_for_log
 from app.routes.availability import router as availability_router
 from app.routes.booking_timeline import router as booking_timeline_router
+from app.routes.events import router as events_router
 from app.routes.history import router as history_router
 from app.routes.pretalx_public import router as pretalx_public_router
 from app.routes.registrations import router as registrations_router
@@ -41,7 +42,9 @@ async def lifespan(app: FastAPI):
     log.info("schedule_print_path=%s", settings.schedule_print_path.strip() or "(leer)")
 
     stop = asyncio.Event()
-    await asyncio.to_thread(refresh_availability_snapshot, settings)
+    # Hintergrundrefresh nur fuer das Default-Event aus Settings.
+    # Weitere Events werden on-demand geladen (oder aus persistentem Snapshot, wenn eingefroren).
+    await asyncio.to_thread(refresh_availability_snapshot, settings, event=settings.event)
 
     async def refresh_loop() -> None:
         while True:
@@ -50,7 +53,7 @@ async def lifespan(app: FastAPI):
                 return
             except TimeoutError:
                 pass
-            await asyncio.to_thread(refresh_availability_snapshot, settings)
+            await asyncio.to_thread(refresh_availability_snapshot, settings, event=settings.event)
 
     task = asyncio.create_task(refresh_loop())
     yield
@@ -96,6 +99,7 @@ elif _origins:
     )
 
 app.include_router(availability_router, prefix="/api/v1")
+app.include_router(events_router, prefix="/api/v1")
 app.include_router(history_router, prefix="/api/v1")
 app.include_router(booking_timeline_router, prefix="/api/v1")
 app.include_router(registrations_router, prefix="/api/v1")

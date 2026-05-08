@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 export type ChartPoint = { x: number; y: number };
 
@@ -185,20 +185,20 @@ function hitAlongVerticalSlice(
 
 function defaultFormatY(y: number): string {
   if (!Number.isFinite(y)) {
-    return '';
+    return "";
   }
   const abs = Math.abs(y);
   const maxFrac = abs >= 100 || abs % 1 === 0 ? 0 : 2;
-  return new Intl.NumberFormat('de-DE', { maximumFractionDigits: maxFrac }).format(y);
+  return new Intl.NumberFormat("de-DE", { maximumFractionDigits: maxFrac }).format(y);
 }
 
 function defaultFormatX(x: number): string {
   if (!Number.isFinite(x)) {
-    return '';
+    return "";
   }
   const abs = Math.abs(x);
   const maxFrac = abs >= 100 || abs % 1 === 0 ? 0 : 2;
-  return new Intl.NumberFormat('de-DE', { maximumFractionDigits: maxFrac }).format(x);
+  return new Intl.NumberFormat("de-DE", { maximumFractionDigits: maxFrac }).format(x);
 }
 
 /** Rasterschritt ≈ 1, 2 oder 5 · 10^n. */
@@ -288,8 +288,8 @@ export function LineChart({
   formatY = defaultFormatY,
   formatHoverBody,
   invertX = false,
-  padL = 56,
-  padR = 28,
+  padL = 60,
+  padR = 52,
   padT = 22,
   padB = 56,
   onPlotHoverChange,
@@ -297,7 +297,7 @@ export function LineChart({
   hoverSnapToNearestX = false,
   selectableSeries = false,
 }: Props) {
-  const xAxisCaptionClipId = `lf-xcap-${useId().replace(/\W/g, '')}`;
+  const xAxisCaptionClipId = `lf-xcap-${useId().replace(/\W/g, "")}`;
   const svgRef = useRef<SVGSVGElement | null>(null);
   const formatTickX = formatXTick ?? formatX;
   const [pinnedSeriesId, setPinnedSeriesId] = useState<string | null>(null);
@@ -317,6 +317,49 @@ export function LineChart({
     fx?: string;
     fy?: string;
   } | null>(null);
+
+  // PNG-Export per foreignObject: Gitterfarben aus Theme-Variablen, kein App-Stylesheet im Ziel-SVG
+  const [plotGridStroke, setPlotGridStroke] = useState("#dee2e6");
+  const [plotVlineStroke, setPlotVlineStroke] = useState("#646464");
+
+  const syncPlotStrokeFromTheme = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const cs = getComputedStyle(document.documentElement);
+    const border = cs.getPropertyValue("--border").trim();
+    const muted = cs.getPropertyValue("--muted").trim();
+    if (border.length > 0) {
+      setPlotGridStroke(border);
+    }
+    if (muted.length > 0) {
+      setPlotVlineStroke(muted);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    const kick = window.setTimeout(() => {
+      syncPlotStrokeFromTheme();
+    }, 0);
+    const mo = new MutationObserver(() => {
+      window.setTimeout(() => {
+        syncPlotStrokeFromTheme();
+      }, 0);
+    });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => {
+      window.clearTimeout(kick);
+      mo.disconnect();
+    };
+  }, [syncPlotStrokeFromTheme]);
+
+  const gridLineStyle = { stroke: plotGridStroke, strokeOpacity: 0.55, strokeWidth: 1 } as const;
+  const vlineStyle = {
+    stroke: plotVlineStroke,
+    strokeOpacity: 0.65,
+    strokeWidth: 1,
+    strokeDasharray: "4 6",
+  } as const;
 
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
@@ -371,7 +414,13 @@ export function LineChart({
   const yPlotMax = yTickVals[yTickVals.length - 1];
   const ySpanPlot = Math.max(yPlotMax - yPlotMin, 1e-12);
 
-  const xTickVals = niceLinearTicks(axisXmin, axisXmax, 9);
+  const xTickValsRaw = niceLinearTicks(axisXmin, axisXmax, 9);
+  const xSpanForEps = Math.max(xRange, 1e-9 * (Math.abs(axisXmin) + Math.abs(axisXmax) + 1));
+  const xTickEps = 1e-9 * xSpanForEps;
+  const xTickValsFiltered = xTickValsRaw.filter(
+    (xv) => xv >= axisXmin - xTickEps && xv <= axisXmax + xTickEps
+  );
+  const xTickVals = xTickValsFiltered.length > 0 ? xTickValsFiltered : xTickValsRaw;
 
   const xScale = (x: number): number =>
     invertX
@@ -516,8 +565,8 @@ export function LineChart({
   const svgAriaParts = [xLabel, yLabel].filter((s): s is string => Boolean(s));
   const svgAriaLabel =
     svgAriaParts.length > 0
-      ? `${svgAriaParts.join(', ')}. Liniendiagramm, Maus zeigt Werte${selectableSeries ? ', Klick wählt eine Kurve aus' : ''}.`
-      : `Liniendiagramm, Maus zeigt Werte${selectableSeries ? ', Klick wählt eine Kurve aus' : ''}.`;
+      ? `${svgAriaParts.join(", ")}. Liniendiagramm, Maus zeigt Werte${selectableSeries ? ", Klick wählt eine Kurve aus" : ""}.`
+      : `Liniendiagramm, Maus zeigt Werte${selectableSeries ? ", Klick wählt eine Kurve aus" : ""}.`;
 
   return (
     <div className="line-chart-wrap">
@@ -534,12 +583,7 @@ export function LineChart({
         >
           <defs>
             <clipPath id={xAxisCaptionClipId}>
-              <rect
-                x={padL}
-                y={height - padB - 4}
-                width={innerW + padR}
-                height={padB + 8}
-              />
+              <rect x={0} y={height - padB - 4} width={width} height={padB + 8} />
             </clipPath>
           </defs>
           {yTickVals.map((yVal, yi) => {
@@ -552,6 +596,7 @@ export function LineChart({
                   x2={width - padR}
                   y1={yPx}
                   y2={yPx}
+                  style={gridLineStyle}
                 />
               </g>
             );
@@ -567,12 +612,13 @@ export function LineChart({
                 x2={xPx}
                 y1={padT}
                 y2={padT + innerH}
+                style={gridLineStyle}
               />
             );
           })}
 
           <rect
-            className={selectableSeries ? 'line-chart__hit line-chart__hit--selectable' : 'line-chart__hit'}
+            className={selectableSeries ? "line-chart__hit line-chart__hit--selectable" : "line-chart__hit"}
             x={padL}
             y={padT}
             width={innerW}
@@ -580,8 +626,8 @@ export function LineChart({
             fill="transparent"
             pointerEvents="all"
             style={{
-              cursor: hover !== null || (selectableSeries && effectivePinnedSeriesId !== null) ? 'crosshair' : 'default',
-              touchAction: selectableSeries ? 'none' : undefined,
+              cursor: hover !== null || (selectableSeries && effectivePinnedSeriesId !== null) ? "crosshair" : "default",
+              touchAction: selectableSeries ? "none" : undefined,
             }}
             onPointerDown={onOverlayPointerDown}
             onMouseMove={onOverlayMove}
@@ -603,7 +649,7 @@ export function LineChart({
             if (s.points.length === 0) {
               return null;
             }
-            const pts = s.points.map((p) => `${String(xScale(p.x))},${String(yScale(p.y))}`).join(' ');
+            const pts = s.points.map((p) => `${String(xScale(p.x))},${String(yScale(p.y))}`).join(" ");
             const d = `M ${pts}`;
             const baseSw = s.emphasize ? 3.2 : 1.7;
             const focusId = hover?.seriesId ?? effectivePinnedSeriesId;
@@ -621,7 +667,7 @@ export function LineChart({
                 strokeWidth={sw}
                 strokeLinejoin="round"
                 strokeLinecap="round"
-                strokeDasharray={s.dashed ? '5 6' : undefined}
+                strokeDasharray={s.dashed ? "5 6" : undefined}
                 opacity={opacity}
               />
             );
@@ -695,6 +741,7 @@ export function LineChart({
               x2={hover.hx}
               y1={padT}
               y2={padT + innerH}
+              style={vlineStyle}
             />
           ) : null}
           {hover !== null ? (
@@ -723,8 +770,8 @@ export function LineChart({
               <div>{hover.bodyLine}</div>
             ) : (
               <>
-                <div>x: {hover.fx ?? ''}</div>
-                <div>y: {hover.fy ?? ''}</div>
+                <div>x: {hover.fx ?? ""}</div>
+                <div>y: {hover.fy ?? ""}</div>
               </>
             )}
           </div>

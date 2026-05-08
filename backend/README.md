@@ -55,6 +55,25 @@ Wenn Frontend und API nicht unter derselben Origin laufen, kann eine Origin List
 
 Zu optionalen Datenbank Pfaden siehe `.env.example` (`HISTORY_*`, `BOOKING_TIMELINE_*`, `REGISTRATIONS_*`).
 
+## CLI-Werkzeuge (`src/app/tools/`)
+
+Kleine Hilfsskripte **ohne laufenden Server** (`uv sync` wie oben). Aufruf typischerweise mit `PYTHONPATH=src` aus dem Ordner `backend`, oder gleich aus `backend/src`:
+
+```bash
+cd backend && PYTHONPATH=src uv run python -m app.tools.<modul> ...
+```
+
+| Modul | Wann / Wofür |
+| --- | --- |
+| `app.tools.import_pretix_history` | Manuell Pretix-Anmeldedaten nach `REGISTRATIONS_*` nachziehen (Probe oder Import-Unterkommandos); siehe Hilfe des Skripts. |
+| `app.tools.rebuild_booking_timeline` | Timeline `BOOKING_TIMELINE_*`-SQLite für Workshops/Exkursionen ergänzen. |
+
+Beispiel (Timeline für Event `2025` neu aus Pretix auf Basis des vorhandenen Verfügbarkeits-Snapshots):
+
+```bash
+cd backend && PYTHONPATH=src uv run python -m app.tools.rebuild_booking_timeline --event 2025
+```
+
 **Optional Event API / pretalx**
 
 - `GET /api/v1/schedule`

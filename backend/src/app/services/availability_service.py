@@ -13,9 +13,13 @@ from app.models.schema import (
     EventInfo,
     Group,
 )
-from app.pretalx.schedule import load_pretalx_schedule, match_pretalx_meta
+from app.pretalx.schedule import (
+    load_pretalx_schedule,
+    match_pretalx_from_candidates,
+    normalize_schedule_title_for_match,
+)
 from app.pretix.client import fetch_event, fetch_items_and_quotas, fetch_waiting_list_entries
-from app.services.group_rules import find_group_for_label, load_group_rules
+from app.services.group_rules import GroupRule, find_group_for_label, load_group_rules
 from app.settings import Settings
 
 _log = get_logger("availability")
@@ -165,6 +169,53 @@ def _waiting_list_count_for_quota(
     return _count_waiting_for_quota(quota, wl_entries)
 
 
+def _workshops_group_tuple(rules: list[GroupRule]) -> tuple[str, str]:
+    """Titel der Workshop-Gruppe.
+
+    Default wenn keine (reine Metadaten-)Regel id workshops in JSON.
+    """
+    for r in rules:
+        if r.id == "workshops":
+            return (r.id, r.title)
+    return ("workshops", "Workshops")
+
+
+def _rules_excluding_workshops(rules: list[GroupRule]) -> list[GroupRule]:
+    return [r for r in rules if r.id != "workshops"]
+
+
+def _pretalx_label_candidates(
+    quota: dict[str, Any], items_by_id: dict[int, dict[str, Any]]
+) -> list[str]:
+    """Bezeichner fuer Pretalx-Titelabgleich.
+
+    Quotenname zuerst, dann alle zugeordneten Produktnamen.
+    """
+    out: list[str] = []
+    keys_seen: set[str] = set()
+
+    def add_raw(raw: str) -> None:
+        t = raw.strip()
+        if not t:
+            return
+        nk = normalize_schedule_title_for_match(t)
+        if nk in keys_seen:
+            return
+        keys_seen.add(nk)
+        out.append(t)
+
+    add_raw(_quota_label(quota, items_by_id))
+    for iid_raw in quota.get("items") or []:
+        iid = _parse_api_id(iid_raw)
+        if iid is None:
+            continue
+        it = items_by_id.get(iid)
+        if not it:
+            continue
+        add_raw(_localized_name(it.get("name")))
+    return out
+
+
 def _quota_to_entry(
     quota: dict[str, Any],
     label: str,
@@ -227,30 +278,46 @@ def build_availability(settings: Settings) -> AvailabilityResponse:
 
     for quota in quotas:
         label = _quota_label(quota, items_by_id)
-        rule = find_group_for_label(label, rules)
-        if rule is None:
-            if settings.group_unmatched_behavior != "other":
-                continue
-            group_id = settings.group_other_id
-            group_title = settings.group_other_title
-        else:
-            group_id = rule.id
-            group_title = rule.title
-
         item = _first_item_for_quota(quota, items_by_id)
         # Abgesagte / deaktivierte Produkte in pretix nicht im Dashboard anzeigen
         if item is not None and item.get("active") is False:
             continue
+
+        px = match_pretalx_from_candidates(_pretalx_label_candidates(quota, items_by_id), schedule)
         sort_at: datetime | None
         pretalx_code: str | None
-        if schedule:
-            sort_at, pretalx_code = match_pretalx_meta(label, schedule)
+
+        if px is not None and px.is_workshop:
+            # Nur Pretalx kennzeichnet Workshops; Pretix-Quoten werden per Titel mit dem Slot
+            # verknuepft.
+            group_id, group_title = _workshops_group_tuple(rules)
+            sort_at = px.sort_at
+            pretalx_code = px.code
+        elif px is not None:
+            rule = find_group_for_label(label, _rules_excluding_workshops(rules))
+            if rule is None:
+                if settings.group_unmatched_behavior != "other":
+                    continue
+                group_id = settings.group_other_id
+                group_title = settings.group_other_title
+            else:
+                group_id = rule.id
+                group_title = rule.title
+            sort_at = px.sort_at
+            pretalx_code = px.code
         else:
-            sort_at, pretalx_code = None, None
-        # Wenn ein pretalx-Schedule verfuegbar ist, zeigen wir nur Workshops mit Match.
-        # So fallen Tippfehler auf und erscheinen nicht "unsortiert" im Dashboard.
-        if group_id == "workshops" and schedule is not None and sort_at is None:
-            continue
+            rule = find_group_for_label(label, _rules_excluding_workshops(rules))
+            if rule is None:
+                if settings.group_unmatched_behavior != "other":
+                    continue
+                group_id = settings.group_other_id
+                group_title = settings.group_other_title
+            else:
+                group_id = rule.id
+                group_title = rule.title
+            sort_at = None
+            pretalx_code = None
+
         wl_enabled = bool(item.get("allow_waitinglist")) if item else False
         wl_count = _waiting_list_count_for_quota(quota, wl_entries, wl_ok)
         entry = _quota_to_entry(quota, label, group_id, sort_at, pretalx_code, wl_enabled, wl_count)

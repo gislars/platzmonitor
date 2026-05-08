@@ -16,6 +16,8 @@ body {
   min-height: 100dvh;
 }
 
+/* Embed-Iframe (html--embed): Layout in App.css, damit keine doppelten Regeln zu body/#root */
+
 html:has(.dashboard--kiosk),
 body:has(.dashboard--kiosk) {
   height: 100%;

@@ -7,9 +7,18 @@ import {
 } from "../../registrationCharts";
 import { useChartWidth } from "../../useChartWidth";
 
+/** LineChart padR für Anmeldungsdiagramme. */
+export const REGISTRATIONS_LINE_CHART_PAD_R = 28;
+
 /** Breite, Kanalwahl und Chartmodus für die Anmeldungs-LineCharts. */
 export function useRegistrationsTileChartSetup(events: RegistrationsEventSerie[]) {
   const chartW = useChartWidth(820, 56);
+
+  /** Anteil padR/chartW für CSS calc mit 100% Breite der Kachel. */
+  const lineChartHeadPadRFraction = useMemo(
+    () => REGISTRATIONS_LINE_CHART_PAD_R / Math.max(chartW, 1),
+    [chartW]
+  );
 
   const onsitePossible = useMemo(() => registrationsHasAnyOnsite(events), [events]);
 
@@ -21,6 +30,7 @@ export function useRegistrationsTileChartSetup(events: RegistrationsEventSerie[]
 
   return {
     chartW,
+    lineChartHeadPadRFraction,
     onsitePossible,
     chartMode,
     setMode,
