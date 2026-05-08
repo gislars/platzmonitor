@@ -34,14 +34,19 @@
   /* Diagramme / Balken (Okabe-Ito-inspiriert); Hervorhebung = CI-Orange */
   --chart-emphasis: var(--accent);
   --chart-wait: #cc79a7;
-  --chart-cb-0: #e69f00;
-  --chart-cb-1: #009e73;
-  --chart-cb-2: #d55e00;
-  --chart-cb-3: #1177bb;
-  --chart-cb-4: #000000;
-  --chart-cb-5: #56b4e9;
-  --chart-cb-6: #b59f00;
-  --chart-cb-7: #332288;
+  /*
+    Farbpalette fuer mehrere Linien (farbblind-tauglich, vermeidet Orange-Tone,
+    da die hervorgehobene Linie immer CI-Orange ist).
+    Inspiriert von Paul Tol (Bright) und allgemein CB-safe Paletten.
+  */
+  --chart-cb-0: #4477aa; /* blue */
+  --chart-cb-1: #66ccee; /* cyan */
+  --chart-cb-2: #228833; /* green */
+  --chart-cb-3: #ee6677; /* red/pink */
+  --chart-cb-4: #aa3377; /* purple */
+  --chart-cb-5: #332288; /* indigo */
+  --chart-cb-6: #000000; /* black */
+  --chart-cb-7: #7a7a7a; /* grey */
 }
 
 [data-theme="fossgis-dark"] {
@@ -74,12 +79,13 @@
   /* Diagramme: Hervorhebung = CI-Orange (auf dunklem Grund lesbar) */
   --chart-emphasis: var(--accent);
   --chart-wait: #e598d1;
-  --chart-cb-0: #f0b429;
-  --chart-cb-1: #3ddc9c;
-  --chart-cb-2: #ff8f6b;
-  --chart-cb-3: #5ba3d9;
-  --chart-cb-4: #e8eaed;
-  --chart-cb-5: #89cff0;
-  --chart-cb-6: #e8dc6a;
-  --chart-cb-7: #a78bcc;
+  /* siehe fossgis-light: gleiche semantische Farben, nur hellere Abstufungen */
+  --chart-cb-0: #6fa8dc; /* blue */
+  --chart-cb-1: #7ad7f0; /* cyan */
+  --chart-cb-2: #53d18c; /* green */
+  --chart-cb-3: #ff8795; /* red/pink */
+  --chart-cb-4: #d07ab5; /* purple */
+  --chart-cb-5: #a78bcc; /* indigo */
+  --chart-cb-6: #e8eaed; /* near-white */
+  --chart-cb-7: #b0b0b0; /* grey */
 }

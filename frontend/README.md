@@ -34,3 +34,33 @@ Kopie von [`.env.example`](./.env.example) nach `.env`; alle Optionen sind dort 
 Deployment (nginx Pfade, `/frontend/`, API unter `/event-api`) steht in:
 
 - [`deploy/README.md`](../deploy/README.md)
+
+## Konferenz-Homepage: Diagramme einbetten
+
+**So bekommst du ein Diagramm auf die Seite**
+
+1. Im Platzmonitor zum gewünschten Diagramm gehen (Dashboard oder Statistik).
+2. Am Diagramm das **Export-Menü** öffnen und **«Widget-Einbettungscode anzeigen»** wählen.
+3. Den angezeigten Code in die Zielseite einfügen (Skriptzeile idealerweise nur **einmal** pro Seite im Kopf, pro Diagramm das zugehörige `div`).
+
+Damit ist keine manuelle Zusammenstellung nötig.
+
+**Wenn du es von Hand bauen willst:** Einmal die Datei `platzmonitor-embed.js` per **absoluter URL** einbinden (Beispielpfad nach Deployment: `…/frontend/platzmonitor-embed.js`). Danach pro Diagramm ein leeres Element, z. B.:
+
+```html
+<div data-platzmonitor-chart="reg-weekly" data-event="2026"></div>
+```
+
+Pflicht ist immer **`data-event`** (pretix Event-Slug, z. B. `2026`). **`data-platzmonitor-chart`** bestimmt das Diagramm:
+
+| Wert | Bedeutung |
+|------|-----------|
+| `reg-weekly` | Anmeldungen pro Woche |
+| `reg-cumulative` | Anmeldungen kumuliert |
+| `booking-workshops` | Workshops, gebuchte Plätze |
+| `booking-excursions` | Exkursionen, gebuchte Plätze |
+| `booking-detail` | Transaktionsverlauf einer Quota (zusätzlich **`data-quota-id`** setzen) |
+
+Die Iframe-URL `/embed?…` leitet das Skript aus **dem Verzeichnis der eingebundenen JS-Datei** ab. **`data-embed-origin`** brauchst du nur, wenn die Embed-Basis **nicht** aus der Skript-URL erkennbar sein soll (Sonderfälle).
+
+Zum lokalen Ausprobieren siehe `embed-iframe-test.html` im Projektroot.

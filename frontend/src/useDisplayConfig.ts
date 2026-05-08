@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from "react";
 import {
   getBuildKioskDefault,
   getDefaultGroupRotationMode,
+  getDefaultHelpBubbleStatistics,
+  getDefaultHelpBubbleTiles,
   getDefaultHideEmptyGroups,
   getDefaultHidePastEntries,
   getDefaultHideSoldOutEntries,
@@ -43,6 +45,11 @@ const LS_HIDE_PAST = "fossgis-platzmonitor.hidePastEntries";
 const LS_VIEW_MODE = "fossgis-platzmonitor.viewMode";
 const LS_STATS_TAB = "fossgis-platzmonitor.statisticsTab";
 const LS_STATS_TAB_AUTOROTATE = "fossgis-platzmonitor.statsTabAutoRotate";
+const LS_EVENT = "fossgis-platzmonitor.eventSlug";
+const LS_REG_INCLUDE_PREVIOUS = "fossgis-platzmonitor.registrationsIncludePrevious";
+const LS_SHOW_STAT_TABS_IN_TILES = "fossgis-platzmonitor.showStatTabsInTiles";
+const LS_HELP_BUBBLE_TILES = "fossgis-platzmonitor.helpBubbleTiles";
+const LS_HELP_BUBBLE_STATISTICS = "fossgis-platzmonitor.helpBubbleStatistics";
 
 function readLsInt(key: string, fallback: number): number {
   try {
@@ -120,6 +127,18 @@ function readLsRotationMode(key: string, fallback: GroupRotationMode): GroupRota
   }
 }
 
+function readLsString(key: string, fallback: string): string {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) {
+      return fallback;
+    }
+    return raw;
+  } catch {
+    return fallback;
+  }
+}
+
 function clampInt(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.floor(n)));
 }
@@ -140,6 +159,11 @@ export function useDisplayConfig() {
       viewMode: getDefaultViewMode(),
       statisticsTab: getDefaultStatisticsTab(),
       statsTabAutoRotate: getBuildKioskDefault(),
+      eventSlug: "",
+      registrationsIncludePrevious: false,
+      showStatTabsInTiles: false,
+      helpBubbleTiles: getDefaultHelpBubbleTiles(),
+      helpBubbleStatistics: getDefaultHelpBubbleStatistics(),
     }),
     []
   );
@@ -185,6 +209,19 @@ export function useDisplayConfig() {
   );
   const [statsTabAutoRotate, setStatsTabAutoRotateState] = useState(() =>
     readLsBool(LS_STATS_TAB_AUTOROTATE, defaults.statsTabAutoRotate)
+  );
+  const [eventSlug, setEventSlugState] = useState(() => readLsString(LS_EVENT, defaults.eventSlug));
+  const [registrationsIncludePrevious, setRegistrationsIncludePreviousState] = useState(() =>
+    readLsBool(LS_REG_INCLUDE_PREVIOUS, defaults.registrationsIncludePrevious)
+  );
+  const [showStatTabsInTiles, setShowStatTabsInTilesState] = useState(() =>
+    readLsBool(LS_SHOW_STAT_TABS_IN_TILES, defaults.showStatTabsInTiles)
+  );
+  const [helpBubbleTiles, setHelpBubbleTilesState] = useState(() =>
+    readLsString(LS_HELP_BUBBLE_TILES, defaults.helpBubbleTiles)
+  );
+  const [helpBubbleStatistics, setHelpBubbleStatisticsState] = useState(() =>
+    readLsString(LS_HELP_BUBBLE_STATISTICS, defaults.helpBubbleStatistics)
   );
 
   const setCols = useCallback((n: number) => {
@@ -306,6 +343,56 @@ export function useDisplayConfig() {
     }
   }, []);
 
+  const setEventSlug = useCallback((slug: string) => {
+    const v = slug.trim();
+    setEventSlugState(v);
+    try {
+      localStorage.setItem(LS_EVENT, v);
+    } catch {
+      void 0;
+    }
+  }, []);
+
+  const setRegistrationsIncludePrevious = useCallback((v: boolean) => {
+    setRegistrationsIncludePreviousState(v);
+    try {
+      localStorage.setItem(LS_REG_INCLUDE_PREVIOUS, v ? "1" : "0");
+    } catch {
+      void 0;
+    }
+  }, []);
+
+  const setShowStatTabsInTiles = useCallback((v: boolean) => {
+    setShowStatTabsInTilesState(v);
+    try {
+      localStorage.setItem(LS_SHOW_STAT_TABS_IN_TILES, v ? "1" : "0");
+    } catch {
+      void 0;
+    }
+  }, []);
+
+  const MAX_HELP_BUBBLE_LEN = 500;
+
+  const setHelpBubbleTiles = useCallback((s: string) => {
+    const v = s.slice(0, MAX_HELP_BUBBLE_LEN);
+    setHelpBubbleTilesState(v);
+    try {
+      localStorage.setItem(LS_HELP_BUBBLE_TILES, v);
+    } catch {
+      void 0;
+    }
+  }, []);
+
+  const setHelpBubbleStatistics = useCallback((s: string) => {
+    const v = s.slice(0, MAX_HELP_BUBBLE_LEN);
+    setHelpBubbleStatisticsState(v);
+    try {
+      localStorage.setItem(LS_HELP_BUBBLE_STATISTICS, v);
+    } catch {
+      void 0;
+    }
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     setColsState(defaults.cols);
     setRowsState(defaults.rows);
@@ -320,6 +407,11 @@ export function useDisplayConfig() {
     setViewModeState(defaults.viewMode);
     setStatisticsTabState(defaults.statisticsTab);
     setStatsTabAutoRotateState(defaults.statsTabAutoRotate);
+    setEventSlugState(defaults.eventSlug);
+    setRegistrationsIncludePreviousState(defaults.registrationsIncludePrevious);
+    setShowStatTabsInTilesState(defaults.showStatTabsInTiles);
+    setHelpBubbleTilesState(defaults.helpBubbleTiles);
+    setHelpBubbleStatisticsState(defaults.helpBubbleStatistics);
     applyThemeToDocument(defaults.themeId);
     clearThemeFromStorage();
     try {
@@ -335,6 +427,11 @@ export function useDisplayConfig() {
       localStorage.removeItem(LS_VIEW_MODE);
       localStorage.removeItem(LS_STATS_TAB);
       localStorage.removeItem(LS_STATS_TAB_AUTOROTATE);
+      localStorage.removeItem(LS_EVENT);
+      localStorage.removeItem(LS_REG_INCLUDE_PREVIOUS);
+      localStorage.removeItem(LS_SHOW_STAT_TABS_IN_TILES);
+      localStorage.removeItem(LS_HELP_BUBBLE_TILES);
+      localStorage.removeItem(LS_HELP_BUBBLE_STATISTICS);
     } catch {
       void 0;
     }
@@ -375,6 +472,16 @@ export function useDisplayConfig() {
     setStatisticsTab,
     statsTabAutoRotate,
     setStatsTabAutoRotate,
+    eventSlug,
+    setEventSlug,
+    registrationsIncludePrevious,
+    setRegistrationsIncludePrevious,
+    showStatTabsInTiles,
+    setShowStatTabsInTiles,
+    helpBubbleTiles,
+    helpBubbleStatistics,
+    setHelpBubbleTiles,
+    setHelpBubbleStatistics,
     resetToDefaults,
     defaults,
   };

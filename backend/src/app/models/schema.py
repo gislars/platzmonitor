@@ -175,3 +175,19 @@ class RegistrationsResponse(BaseModel):
     fetched_at: datetime = Field(serialization_alias="fetchedAt")
     emphasized_event_slug: str = Field(serialization_alias="emphasizedEventSlug")
     events: list[RegistrationsEvent]
+
+
+class EventsCatalogEvent(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    slug: str
+    title: str | None = None
+    start_date: str = Field(serialization_alias="startDate")
+    end_date: str = Field(serialization_alias="endDate")
+
+
+class EventsCatalogResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fetched_at: datetime = Field(serialization_alias="fetchedAt")
+    events: list[EventsCatalogEvent]

@@ -1,1 +1,1 @@
-"""Operational CLIs (`python -m app.tools.&lt;name&gt;`)."""
+"""Manuelle CLIs ohne Server: siehe Backend-README („CLI-Werkzeuge")."""

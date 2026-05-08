@@ -17,6 +17,10 @@ router = APIRouter(tags=["booking-timeline"])
     response_model_by_alias=True,
 )
 def get_booking_timeline(
+    event: str = Query(
+        ...,
+        description="pretix Event-Slug (z. B. 2026 oder konf-2018)",
+    ),
     quota_ids: str = Query(
         ...,
         alias="quotaIds",
@@ -24,6 +28,8 @@ def get_booking_timeline(
     ),
 ) -> BookingTimelineResponse:
     settings = get_settings()
+    # Timeline ist event-spezifisch (Quota-IDs sind nicht global eindeutig).
+    settings = settings.model_copy(update={"event": event.strip()})
     quotas = [q.strip() for q in quota_ids.split(",") if q.strip()]
     raw = booking_timeline.read_series(settings, quotas)
 

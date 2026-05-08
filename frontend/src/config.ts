@@ -132,6 +132,31 @@ export function getDefaultHidePastEntries(): boolean {
 /** Standard-Theme aus `VITE_DEFAULT_THEME` (siehe THEMES). */
 export { getDefaultThemeIdFromEnv, THEMES, type ThemeId } from "./themes";
 
+/** Vorgabetexte fuer die Hilfe-Bubble; ueberschreibbar per `VITE_HELP_BUBBLE_*` und im Panel. */
+export const DEFAULT_HELP_BUBBLE_TILES = "Buchungen sind am Help-Desk möglich.";
+export const DEFAULT_HELP_BUBBLE_STATISTICS = "Buchungen sind am Help-Desk möglich.";
+
+function parseOptionalStringEnv(raw: string | undefined, fallback: string): string {
+  if (raw === undefined || raw === "") {
+    return fallback;
+  }
+  const t = String(raw).trim();
+  return t.length > 0 ? t : fallback;
+}
+
+/** Zeile in `frontend/.env`: `VITE_HELP_BUBBLE_TILES` */
+export function getDefaultHelpBubbleTiles(): string {
+  return parseOptionalStringEnv(import.meta.env.VITE_HELP_BUBBLE_TILES, DEFAULT_HELP_BUBBLE_TILES);
+}
+
+/** Zeile in `frontend/.env`: `VITE_HELP_BUBBLE_STATISTICS` */
+export function getDefaultHelpBubbleStatistics(): string {
+  return parseOptionalStringEnv(
+    import.meta.env.VITE_HELP_BUBBLE_STATISTICS,
+    DEFAULT_HELP_BUBBLE_STATISTICS
+  );
+}
+
 export type ViewMode = "tiles" | "statistics";
 export type StatisticsTab = "workshops" | "registrations";
 

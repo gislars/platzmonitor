@@ -20,6 +20,8 @@ interface ImportMetaEnv {
   readonly VITE_REGISTRATIONS_POLL_MS?: string;
   /** Nur Dev: nicht-negative Zahl simuliert Warteliste am ersten Listeneintrag. */
   readonly VITE_SIMULATE_WAITLIST?: string;
+  /** CSP frame-ancestors für Vite (Live-Embed); leer = integrierte Vorgabe */
+  readonly VITE_EMBED_FRAME_ANCESTORS?: string;
 }
 
 interface ImportMeta {

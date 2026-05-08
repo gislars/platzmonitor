@@ -50,12 +50,28 @@
   min-height: 0;
 }
 
+/**
+ * Kopfbereich inkl. optionaler Kachel-Hilfe und Verbindungsstreifen. Abstand nach unten
+ * war frueher am Header; jetzt am Masthead, damit Kachel- und Statistik-Modus dieselbe
+ * Struktur haben (nur Titel im Header-Grid, keine Hilfe-Pille darin).
+ */
+.dashboard__masthead {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  margin-bottom: clamp(1rem, 3vw, 1.75rem);
+}
+
+.dashboard--kiosk .dashboard__masthead {
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+}
+
 .dashboard__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, min(40rem, 100%)) minmax(0, 1fr);
   align-items: start;
   gap: 0.5rem 0.75rem;
-  margin-bottom: clamp(1rem, 3vw, 1.75rem);
+  margin-bottom: 0;
   flex-shrink: 0;
 }
 
@@ -76,10 +92,6 @@
   align-self: start;
 }
 
-.dashboard--kiosk .dashboard__header {
-  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
-}
-
 .dashboard__title {
   font-size: clamp(1.65rem, 3.5vw, 2.5rem);
   font-weight: 700;
@@ -98,8 +110,29 @@
   line-height: 1.25;
 }
 
+/** Nur Kachelmodus: Hilfe unter dem Header, mit contain gegen Animations-Reflow. */
+.dashboard__tiles-help-strip {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 clamp(1rem, 3vw, 2rem) 0.55rem;
+  box-sizing: border-box;
+  overflow-anchor: none;
+  contain: layout style;
+}
+
+.dashboard__tiles-help-strip .dashboard__help {
+  margin: 0 auto;
+}
+
+.dashboard--kiosk .dashboard__tiles-help-strip {
+  padding-bottom: 0.4rem;
+}
+
 .dashboard__help {
-  --dashboard-help-rotation-ms: 25s;
+  /* Fallback; Dashboard setzt pro pollMs. Entspricht Vorgabe getPollIntervalMs (55 s). */
+  --dashboard-help-rotation-ms: 55s;
   position: relative;
   display: inline-flex;
   align-items: flex-start;
@@ -119,6 +152,39 @@
   isolation: isolate;
 }
 
+/** Echtes Element statt ::after, damit Web-Animations / getAnimations den Reset zuverlässig treffen. */
+.dashboard__help-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  left: -38%;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 55%, var(--surface)) 45%,
+    color-mix(in srgb, var(--accent) 35%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard__help-sweep {
+    animation: dashboard-help-sweep var(--dashboard-help-rotation-ms) linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard__help-sweep {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .dashboard__help-icon,
 .dashboard__help-text {
   position: relative;
@@ -135,29 +201,6 @@
   min-width: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .dashboard__help::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 38%;
-    left: -38%;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: 0.55;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      color-mix(in srgb, var(--accent) 55%, var(--surface)) 45%,
-      color-mix(in srgb, var(--accent) 35%, transparent) 55%,
-      transparent 100%
-    );
-    animation: dashboard-help-sweep var(--dashboard-help-rotation-ms) linear infinite;
-  }
-}
-
 @keyframes dashboard-help-sweep {
   0% {
     left: -38%;
@@ -168,14 +211,40 @@
 }
 
 .dashboard--kiosk .dashboard__help {
-  margin-bottom: 0.4rem;
   padding: 0.32rem 0.65rem 0.36rem 0.5rem;
 }
 
-.dashboard__sub {
+.dashboard--kiosk .dashboard__tiles-help-strip .dashboard__help {
+  margin: 0 auto;
+}
+
+/**
+ * Hinweis „Keine Verbindung“: unter dem Header, nicht in der Kopfzeile, damit der
+ * Kiosk-Flex-Bereich fuer Diagramme stabil bleibt. Nur bei aktivem Hinweis (--active)
+ * feste Mindesthoehe, damit bei erkanntem Offline-Zustand nichts beim Poll hoppelt.
+ */
+.dashboard__connectivity-strip {
+  flex-shrink: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-anchor: none;
+}
+
+.dashboard__connectivity-strip--active {
+  min-height: 2.35rem;
+  padding: 0 0.5rem;
+}
+
+.dashboard__connectivity-strip__text {
   margin: 0;
   font-size: clamp(0.9rem, 1.8vw, 1.05rem);
   color: var(--muted);
+  line-height: 1.35;
+  text-align: center;
 }
 
 .dashboard__sub-hint {
@@ -239,6 +308,7 @@
   display: grid;
   gap: clamp(1rem, 3vw, 2rem);
   align-items: stretch;
+  overflow-anchor: none;
 }
 
 .dashboard__section {
@@ -270,6 +340,8 @@
   font-weight: 400;
   font-size: max(0.78em, 0.8rem);
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .dashboard__section-title .dashboard__chart-stand {
@@ -302,7 +374,8 @@
   width: 100%;
 }
 
-.dashboard__grid-cell > .stat-reg-chart {
+/* Kachel-Grid: Rasterzelle umschließt chart-capture-root inklusive PNG-Export */
+.dashboard__grid-cell > .chart-capture-root {
   flex: 1;
   width: 100%;
   min-width: 0;
@@ -409,19 +482,57 @@ button.page-indicator__seg:focus-visible {
   font-weight: 600;
 }
 
-.config-panel__section + .config-panel__section {
-  padding-top: 0.85rem;
-  margin-top: 0.2rem;
-  border-top: 1px solid var(--border);
+.config-panel__quick {
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.config-panel__section-title {
-  margin: 0 0 0.55rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
-  color: var(--muted);
+.config-panel__quick .config-panel__field:last-child {
+  margin-bottom: 0;
+}
+
+.config-panel__accordion {
+  margin: 0.45rem 0 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 2.5%, var(--surface));
+  padding: 0 0.55rem 0.35rem;
+}
+
+.config-panel__accordion:first-of-type {
+  margin-top: 0.15rem;
+}
+
+.config-panel__accordion-summary {
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.55rem 0.2rem;
+  cursor: pointer;
+  list-style-position: outside;
+  color: var(--text);
+}
+
+.config-panel__accordion-summary::-webkit-details-marker {
+  margin-inline-end: 0.35rem;
+}
+
+.config-panel__accordion[open] .config-panel__accordion-summary {
+  margin-bottom: 0.15rem;
+}
+
+.config-panel__accordion-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.config-panel__accordion-body {
+  padding: 0 0.05rem 0.1rem;
+}
+
+.config-panel__accordion-body .config-panel__field:last-child {
+  margin-bottom: 0.35rem;
 }
 
 .config-panel__lead {
@@ -497,7 +608,8 @@ button.page-indicator__seg:focus-visible {
 }
 
 .config-panel__field input,
-.config-panel__field select {
+.config-panel__field select,
+.config-panel__field textarea {
   font: inherit;
   padding: 0.4rem 0.5rem;
   border-radius: 6px;
@@ -506,8 +618,14 @@ button.page-indicator__seg:focus-visible {
   color: var(--text);
 }
 
+.config-panel__field textarea {
+  min-height: 3.25rem;
+  resize: vertical;
+}
+
 .config-panel__field input:focus-visible,
-.config-panel__field select:focus-visible {
+.config-panel__field select:focus-visible,
+.config-panel__field textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -531,22 +649,28 @@ button.page-indicator__seg:focus-visible {
   color: var(--muted);
 }
 
-.config-panel__reset,
-.config-panel__close {
+.config-panel__close,
+.config-panel__reset {
   font: inherit;
   width: 100%;
-  margin-top: 0;
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
   cursor: pointer;
 }
 
 .config-panel__close {
+  margin-top: 0;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--text);
+  font-weight: 600;
+}
+
+.config-panel__reset {
   margin-top: 0.45rem;
-  background: var(--surface);
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
 }
 
 .config-panel__reset:focus-visible,
@@ -659,6 +783,7 @@ button.page-indicator__seg:focus-visible {
   min-width: 0;
   overflow-x: clip;
   overflow-y: auto;
+  overflow-anchor: none;
 }
 
 .stat-tabs {
@@ -793,8 +918,21 @@ button.page-indicator__seg:focus-visible {
   text-align: left;
 }
 
-.stat-reg-chart__mode {
+/* Kanal-Umschalter und Export: rechter Rand an innerem Plot (LineChart padR / viewBox-Breite). */
+.stat-reg-chart--registrations-line .stat-reg-chart__head {
+  box-sizing: border-box;
+  padding-right: calc(100% * var(--stat-reg-plot-pad-r-fr, 0.03415));
+}
+
+.stat-reg-chart__head-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+.stat-reg-chart__mode {
   display: inline-flex;
   flex-shrink: 0;
   border: 1px solid var(--border);
@@ -1201,28 +1339,25 @@ button.page-indicator__seg:focus-visible {
   color: var(--muted);
 }
 
+/* Oben in der Plot-Fläche (nicht darüber), damit Einbettungen mit overflow nicht abschneiden. */
 .line-chart__tooltip--dock {
   position: absolute;
-  bottom: 100%;
-  top: auto;
+  top: 0;
+  bottom: auto;
   transform: translateX(-50%);
-  margin: 0 0 0.35rem;
+  margin: 0;
   z-index: 2;
   max-width: min(16rem, 92%);
   pointer-events: none;
   text-align: left;
 }
 
+/* Gitter: Stroke nur inline im LineChart (Export per foreignObject ohne App-CSS) */
 .line-chart__grid {
-  stroke: color-mix(in srgb, var(--border) 65%, transparent);
-  stroke-width: 1;
   pointer-events: none;
 }
 
 .line-chart__vline {
-  stroke: color-mix(in srgb, var(--muted) 75%, transparent);
-  stroke-dasharray: 4 6;
-  stroke-width: 1;
   pointer-events: none;
 }
 
@@ -1370,4 +1505,457 @@ button.page-indicator__seg:focus-visible {
 .stat-dialog__chart {
   overflow: auto;
   min-width: 0;
+}
+
+.stat-dialog__head-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+/* Dialog: Einbettungs-HTML, Syntaxfärbung mit highlight.js */
+.widget-embed-dialog__root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.widget-embed-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--text) 34%, transparent);
+}
+
+.widget-embed-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(820px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+.widget-embed-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.widget-embed-dialog__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.25;
+}
+
+.widget-embed-dialog__close {
+  font: inherit;
+  flex-shrink: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.widget-embed-dialog__close:hover {
+  background: var(--surface-hover);
+}
+
+.widget-embed-dialog__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.widget-embed-dialog__steps {
+  margin: 0.5rem 0 0.85rem;
+  padding-left: 1.35rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.widget-embed-dialog__steps li {
+  padding-left: 0.25rem;
+}
+
+.widget-embed-dialog__steps li + li {
+  margin-top: 0.4rem;
+}
+
+.widget-embed-dialog__steps code {
+  font-size: 0.88em;
+  color: var(--text);
+}
+
+.widget-embed-dialog__primary {
+  margin-bottom: 0.65rem;
+}
+
+.widget-embed-dialog__primary .widget-embed-dialog__copy-btn--primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.widget-embed-dialog__feedback {
+  margin: 0 0 0.85rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.widget-embed-dialog__feedback--success {
+  color: var(--text);
+  background: color-mix(in srgb, var(--ok) 14%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+}
+
+.widget-embed-dialog__feedback--error {
+  color: var(--text);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+}
+
+.widget-embed-dialog__advanced {
+  margin-top: 0.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 3%, var(--surface));
+}
+
+.widget-embed-dialog__advanced-summary {
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  list-style-position: outside;
+}
+
+.widget-embed-dialog__advanced-summary:hover {
+  background: var(--surface-hover);
+}
+
+.widget-embed-dialog__advanced[open] .widget-embed-dialog__advanced-summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.widget-embed-dialog__advanced-body {
+  padding: 0.75rem 0.75rem 0.25rem;
+}
+
+.widget-embed-dialog__advanced-body .widget-embed-dialog__block:last-child {
+  margin-bottom: 0.5rem;
+}
+
+.widget-embed-dialog__block {
+  margin-bottom: 1rem;
+}
+
+.widget-embed-dialog__block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.widget-embed-dialog__block-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.widget-embed-dialog__copy-btn {
+  font: inherit;
+  flex-shrink: 0;
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.widget-embed-dialog__copy-btn:hover {
+  background: var(--surface-hover);
+}
+
+.widget-embed-dialog__copy-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.widget-embed-dialog__copy-btn--primary {
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+
+.widget-embed-dialog__pre {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 5.5%, var(--surface));
+  overflow-x: auto;
+  max-height: min(280px, 42vh);
+  font-size: 0.76rem;
+  line-height: 1.42;
+  tab-size: 2;
+}
+
+.widget-embed-dialog__pre code.hljs {
+  display: block;
+  background: transparent !important;
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.widget-embed-dialog .hljs-tag,
+.widget-embed-dialog .hljs-name {
+  color: var(--accent) !important;
+}
+
+.widget-embed-dialog .hljs-attr {
+  color: color-mix(in srgb, var(--accent) 72%, var(--text)) !important;
+}
+
+.widget-embed-dialog .hljs-string,
+.widget-embed-dialog .hljs-quote {
+  color: color-mix(in srgb, var(--ok) 65%, var(--text)) !important;
+}
+
+.widget-embed-dialog .hljs-comment,
+.widget-embed-dialog .hljs-meta {
+  color: var(--muted) !important;
+}
+
+.chart-capture-root {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.chart-capture-root > .stat-reg-chart {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Buchungshistorie: nur Titel + Export (ohne head-tools). */
+.stat-reg-chart__head > .chart-export-menu {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.stat-reg-chart__head-tools .chart-export-menu {
+  flex-shrink: 0;
+}
+
+.chart-export-menu {
+  position: relative;
+  z-index: 3;
+}
+
+.chart-export-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+
+.chart-export-menu__trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chart-export-menu__trigger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 7%, var(--surface));
+}
+
+.chart-export-menu__trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chart-export-menu__dots {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transform: translateY(-0.05em);
+}
+
+.chart-export-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  right: 0;
+  min-width: 12.5rem;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 14%, transparent);
+}
+
+.chart-export-menu__item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chart-export-menu__item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.chart-export-menu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chart-export-menu__status {
+  position: absolute;
+  top: calc(100% + 0.15rem);
+  right: 0;
+  left: auto;
+  width: min(18rem, 70vw);
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Iframe-Embed: horizontales Abschneiden am html-Element */
+html.html--embed {
+  overflow-x: clip;
+}
+
+html.html--embed,
+html.html--embed body {
+  min-height: 0;
+  height: auto;
+  /* Seitenhintergrund wie Diagrammkarte */
+  background: var(--surface);
+  color: var(--text);
+}
+
+html.html--embed body {
+  overflow-x: clip;
+}
+
+html.html--embed #root {
+  min-height: 0 !important;
+  height: auto;
+  background: var(--surface);
+  overflow-x: clip;
+}
+
+.embed-page {
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 0.45rem 0.65rem 0.65rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.embed-page__offline-notice {
+  margin: 0 0 0.55rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.38;
+  color: var(--warn-text);
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--border));
+  border-radius: 6px;
+}
+
+/* Embed: Außenabstand und Abstand zur Iframe-Kante unten */
+html.html--embed .embed-page {
+  padding: 0.4rem 0.55rem 0.5rem;
+}
+
+/* Embed: festes Unter-Padding unter dem Plot */
+html.html--embed .embed-page .stat-reg-chart {
+  padding-top: 0.55rem;
+  padding-left: clamp(0.55rem, 1.2vw, 0.85rem);
+  padding-right: clamp(0.55rem, 1.2vw, 0.85rem);
+  padding-bottom: 0.45rem;
+}
+
+/* Embed Registrierungskacheln: etwas dichtere Kopfzeile */
+html.html--embed .embed-page--registration .stat-reg-chart__head {
+  gap: 0.28rem;
+  margin-bottom: 0.05rem;
+}
+
+html.html--embed .embed-page--registration .stat-reg-chart__title {
+  font-size: 0.92rem;
+  line-height: 1.22;
+}
+
+.embed-page__panel {
+  max-width: 760px;
+}
+
+.embed-page__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.embed-page__chart {
+  min-width: 0;
+}
+
+.embed-page__meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
 }

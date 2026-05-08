@@ -95,3 +95,28 @@ def test_schedule_proxy_returns_json(client: TestClient, monkeypatch: pytest.Mon
         r = client.get("/api/v1/schedule")
     assert r.status_code == 200
     assert r.json() == {"ok": True, "x": 1}
+
+
+def test_availability_requires_event_query(client: TestClient):
+    r = client.get("/api/v1/availability")
+    # FastAPI validation error (fehlender required query parameter)
+    assert r.status_code in (400, 422)
+
+
+def test_registrations_requires_event_query(client: TestClient):
+    r = client.get("/api/v1/registrations")
+    assert r.status_code in (400, 422)
+
+
+def test_events_catalog_works(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv(
+        "EVENTS_JSON",
+        '[{"slug":"2026","title":"FOSSGIS 2026","start_date":"2026-03-04","end_date":"2026-03-07"}]',
+    )
+    clear_settings_cache()
+    r = client.get("/api/v1/events")
+    assert r.status_code == 200
+    body = r.json()
+    assert "fetchedAt" in body
+    assert body["events"][0]["slug"] == "2026"
+    assert body["events"][0]["endDate"] == "2026-03-07"

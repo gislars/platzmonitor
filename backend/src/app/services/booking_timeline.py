@@ -31,10 +31,21 @@ _ITEM_CHUNK = 45
 
 def _db_path(settings: Settings) -> Path:
     raw = settings.booking_timeline_db_path.strip() or "data/booking_timeline.sqlite"
+    ev = settings.event.strip()
+    if "{event}" in raw and ev:
+        raw = raw.replace("{event}", ev)
     p = Path(raw)
     if not p.is_absolute():
-        return (_BACKEND_ROOT / p).resolve()
-    return p.resolve()
+        p = (_BACKEND_ROOT / p).resolve()
+    else:
+        p = p.resolve()
+
+    # Wenn kein Template genutzt wird, trotzdem pro Event trennen.
+    if ev and "{event}" not in (settings.booking_timeline_db_path or ""):
+        stem = p.stem
+        suf = p.suffix or ".sqlite"
+        p = p.with_name(f"{stem}-{ev}{suf}")
+    return p
 
 
 def _ensure_schema(conn: sqlite3.Connection) -> None:
@@ -297,6 +308,19 @@ def try_refresh_after_snapshot(settings: Settings, snapshot: AvailabilityRespons
             _log.exception("booking_timeline: Neuaufbau fehlgeschlagen")
             return
         _last_refresh_monotonic = time.monotonic()
+
+
+def booking_timeline_db_path(settings: Settings) -> Path:
+    """Absoluter Pfad zur SQLite-Datei der Transaktions-Timeline (inkl. Event-Suffix)."""
+    return _db_path(settings)
+
+
+def rebuild_quota_tx_daily_from_snapshot(
+    settings: Settings,
+    snapshot: AvailabilityResponse,
+) -> None:
+    """quota_tx_daily neu aus pretix-Transaktionen; fuer CLI ohne laufenden HTTP-Server."""
+    _rebuild_from_snapshot(settings, snapshot)
 
 
 def read_series(
