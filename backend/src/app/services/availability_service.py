@@ -247,7 +247,8 @@ def _resolve_pretalx_for_quota(
     )
     if meta_conflict:
         _log.warning(
-            "pretix_quota_id=%s organizer=%s event=%s: mehrere verschiedene %r-Werte %s, nutze ersten",
+            "pretix_quota_id=%s organizer=%s event=%s: mehrere verschiedene %r-Werte %s, "
+            "nutze ersten",
             quota.get("id"),
             settings.organizer,
             settings.event,
