@@ -29,10 +29,11 @@ Reverse Proxy und Pfad Präfix (z.B. `/event-api`) werden in der Deploy Doku bes
 
 ### Logging
 
-- App Logger nutzt den Namensraum `pm`
-- keine Secrets loggen (z.B. `PRETIX_TOKEN`)
-- `LOG_LEVEL` steuert Detailgrad
-- `LOG_FILE` kann eine Datei aktivieren (leer bedeutet: kein App Logfile)
+- App Logger nutzt den Namensraum `pm` (z. B. `pm.availability`, `pm.main`)
+- keine Secrets loggen (z. B. `PRETIX_TOKEN`)
+- `LOG_LEVEL` steuert Detailgrad (Standard `INFO`)
+- `LOG_FILE`: leer oder nicht gesetzt entspricht dem Standardpfad **`/var/log/platzmonitor/app.log`**
+
 
 ### CORS (nur Multihost)
 

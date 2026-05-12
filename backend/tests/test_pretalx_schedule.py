@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from app.pretalx.schedule import (
-    PretalxSchedule,
+    build_code_to_meta_map,
+    build_pretalx_schedule,
     build_title_to_meta_map,
+    match_pretalx_by_code,
     match_pretalx_from_candidates,
     match_pretalx_label,
 )
@@ -65,7 +67,7 @@ def test_match_label_strips_ws_prefix_with_unicode_dash():
             }
         }
     }
-    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(raw))
+    sched = build_pretalx_schedule(raw)
     label = "WS05\u2013QGIS Workshop"
     mt = match_pretalx_label(label, sched)
     assert mt is not None
@@ -92,7 +94,7 @@ def test_match_label_strips_ws_prefix_like_pretix_product_name():
             }
         }
     }
-    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(raw))
+    sched = build_pretalx_schedule(raw)
     label = "WS07 - Datenbanktricks"
     mt = match_pretalx_label(label, sched)
     assert mt is not None
@@ -119,7 +121,7 @@ def test_match_pretalx_from_candidates_falls_back_to_second_label():
             }
         }
     }
-    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(raw))
+    sched = build_pretalx_schedule(raw)
     m = match_pretalx_from_candidates(
         ["Generische Quota", "WS03 - PostGIS fuer Einsteiger"],
         sched,
@@ -176,7 +178,66 @@ def test_workshop_fallback_ws_room_when_type_missing():
             }
         }
     }
-    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(raw))
+    sched = build_pretalx_schedule(raw)
     mt = match_pretalx_label("WS01 - Legacy Slot", sched)
     assert mt is not None
+    assert mt.is_workshop is True
+
+
+def test_build_code_to_meta_map_earliest_start_on_duplicate_normalized_code():
+    raw = {
+        "schedule": {
+            "conference": {
+                "days": [
+                    _minimal_day(
+                        [
+                            {
+                                "title": "Later Slot",
+                                "date": "2026-03-27T10:00:00+01:00",
+                                "code": "AB1",
+                                "type": "Workshop (Präsenz)",
+                            },
+                            {
+                                "title": "Earlier Slot",
+                                "date": "2026-03-26T09:00:00+01:00",
+                                "code": "ab1",
+                                "type": "Workshop (Präsenz)",
+                            },
+                        ]
+                    ),
+                ]
+            }
+        }
+    }
+    m = build_code_to_meta_map(raw)
+    assert len(m) == 1
+    dt, code_raw, is_w = m["ab1"]
+    assert dt.isoformat().startswith("2026-03-26")
+    assert code_raw == "ab1"
+    assert is_w is True
+
+
+def test_match_pretalx_by_code_is_case_insensitive():
+    raw = {
+        "schedule": {
+            "conference": {
+                "days": [
+                    _minimal_day(
+                        [
+                            {
+                                "title": "GeoServer",
+                                "date": "2026-03-26T14:00:00+01:00",
+                                "code": "GS01",
+                                "type": "Workshop (Präsenz)",
+                            },
+                        ]
+                    ),
+                ]
+            }
+        }
+    }
+    sched = build_pretalx_schedule(raw)
+    mt = match_pretalx_by_code("gs01", sched)
+    assert mt is not None
+    assert mt.code == "GS01"
     assert mt.is_workshop is True
