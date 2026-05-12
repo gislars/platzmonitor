@@ -9,10 +9,10 @@ import {
   getDefaultHideSoldOutEntries,
   getDefaultMaxGroupColumns,
   getDefaultPageRotationMs,
-  getDefaultStatisticsTab,
+  getDefaultDomain,
   getDefaultTilesCols,
   getDefaultTilesRows,
-  getDefaultViewMode,
+  getDefaultView,
   getPollIntervalMs,
   MAX_MAX_GROUP_COLUMNS,
   MAX_TILE_DIM,
@@ -21,8 +21,8 @@ import {
   MIN_POLL_INTERVAL_MS,
   MIN_TILE_DIM,
   type GroupRotationMode,
-  type StatisticsTab,
-  type ViewMode,
+  type Domain,
+  type View,
 } from "./config";
 import {
   applyThemeToDocument,
@@ -42,6 +42,8 @@ const LS_GROUP_ROTATION_MODE = "fossgis-platzmonitor.groupRotationMode";
 const LS_HIDE_EMPTY = "fossgis-platzmonitor.hideEmptyGroups";
 const LS_HIDE_SOLD_OUT = "fossgis-platzmonitor.hideSoldOutEntries";
 const LS_HIDE_PAST = "fossgis-platzmonitor.hidePastEntries";
+const LS_VIEW = "fossgis-platzmonitor.view";
+const LS_DOMAIN = "fossgis-platzmonitor.domain";
 const LS_VIEW_MODE = "fossgis-platzmonitor.viewMode";
 const LS_STATS_TAB = "fossgis-platzmonitor.statisticsTab";
 const LS_STATS_TAB_AUTOROTATE = "fossgis-platzmonitor.statsTabAutoRotate";
@@ -82,14 +84,14 @@ function readLsBool(key: string, fallback: boolean): boolean {
   }
 }
 
-function readLsStatisticsTab(key: string, fallback: StatisticsTab): StatisticsTab {
+function readLsDomain(key: string, fallback: Domain): Domain {
   try {
     const raw = localStorage.getItem(key);
-    if (raw === "registrations") {
-      return "registrations";
+    if (raw === "anmeldungen" || raw === "registrations") {
+      return "anmeldungen";
     }
-    if (raw === "workshops") {
-      return "workshops";
+    if (raw === "begleitprogramm" || raw === "workshops") {
+      return "begleitprogramm";
     }
     return fallback;
   } catch {
@@ -97,14 +99,14 @@ function readLsStatisticsTab(key: string, fallback: StatisticsTab): StatisticsTa
   }
 }
 
-function readLsViewMode(key: string, fallback: ViewMode): ViewMode {
+function readLsView(key: string, fallback: View): View {
   try {
     const raw = localStorage.getItem(key);
-    if (raw === "statistics") {
-      return "statistics";
+    if (raw === "analysen" || raw === "statistics") {
+      return "analysen";
     }
-    if (raw === "tiles") {
-      return "tiles";
+    if (raw === "uebersicht" || raw === "tiles") {
+      return "uebersicht";
     }
     return fallback;
   } catch {
@@ -156,8 +158,8 @@ export function useDisplayConfig() {
       hideSoldOutEntries: getDefaultHideSoldOutEntries(),
       hidePastEntries: getDefaultHidePastEntries(),
       themeId: getDefaultThemeIdFromEnv(),
-      viewMode: getDefaultViewMode(),
-      statisticsTab: getDefaultStatisticsTab(),
+      view: getDefaultView(),
+      domain: getDefaultDomain(),
       statsTabAutoRotate: getBuildKioskDefault(),
       eventSlug: "",
       registrationsIncludePrevious: false,
@@ -201,12 +203,22 @@ export function useDisplayConfig() {
   );
   const [themeId, setThemeIdState] = useState<ThemeId>(() => getInitialThemeId());
 
-  const [viewMode, setViewModeState] = useState<ViewMode>(() =>
-    readLsViewMode(LS_VIEW_MODE, defaults.viewMode)
-  );
-  const [statisticsTab, setStatisticsTabState] = useState<StatisticsTab>(() =>
-    readLsStatisticsTab(LS_STATS_TAB, defaults.statisticsTab)
-  );
+  const [view, setViewState] = useState<View>(() => {
+    const fallback = defaults.view;
+    const v = readLsView(LS_VIEW, fallback);
+    if (v !== fallback) {
+      return v;
+    }
+    return readLsView(LS_VIEW_MODE, fallback);
+  });
+  const [domain, setDomainState] = useState<Domain>(() => {
+    const fallback = defaults.domain;
+    const d = readLsDomain(LS_DOMAIN, fallback);
+    if (d !== fallback) {
+      return d;
+    }
+    return readLsDomain(LS_STATS_TAB, fallback);
+  });
   const [statsTabAutoRotate, setStatsTabAutoRotateState] = useState(() =>
     readLsBool(LS_STATS_TAB_AUTOROTATE, defaults.statsTabAutoRotate)
   );
@@ -316,19 +328,19 @@ export function useDisplayConfig() {
     persistThemeId(id);
   }, []);
 
-  const setViewMode = useCallback((m: ViewMode) => {
-    setViewModeState(m);
+  const setView = useCallback((v: View) => {
+    setViewState(v);
     try {
-      localStorage.setItem(LS_VIEW_MODE, m);
+      localStorage.setItem(LS_VIEW, v);
     } catch {
       void 0;
     }
   }, []);
 
-  const setStatisticsTab = useCallback((t: StatisticsTab) => {
-    setStatisticsTabState(t);
+  const setDomain = useCallback((d: Domain) => {
+    setDomainState(d);
     try {
-      localStorage.setItem(LS_STATS_TAB, t);
+      localStorage.setItem(LS_DOMAIN, d);
     } catch {
       void 0;
     }
@@ -404,8 +416,8 @@ export function useDisplayConfig() {
     setHideSoldOutEntriesState(defaults.hideSoldOutEntries);
     setHidePastEntriesState(defaults.hidePastEntries);
     setThemeIdState(defaults.themeId);
-    setViewModeState(defaults.viewMode);
-    setStatisticsTabState(defaults.statisticsTab);
+    setViewState(defaults.view);
+    setDomainState(defaults.domain);
     setStatsTabAutoRotateState(defaults.statsTabAutoRotate);
     setEventSlugState(defaults.eventSlug);
     setRegistrationsIncludePreviousState(defaults.registrationsIncludePrevious);
@@ -424,6 +436,8 @@ export function useDisplayConfig() {
       localStorage.removeItem(LS_HIDE_EMPTY);
       localStorage.removeItem(LS_HIDE_SOLD_OUT);
       localStorage.removeItem(LS_HIDE_PAST);
+      localStorage.removeItem(LS_VIEW);
+      localStorage.removeItem(LS_DOMAIN);
       localStorage.removeItem(LS_VIEW_MODE);
       localStorage.removeItem(LS_STATS_TAB);
       localStorage.removeItem(LS_STATS_TAB_AUTOROTATE);
@@ -466,10 +480,10 @@ export function useDisplayConfig() {
     setHidePastEntries,
     themeId,
     setThemeId,
-    viewMode,
-    setViewMode,
-    statisticsTab,
-    setStatisticsTab,
+    view,
+    setView,
+    domain,
+    setDomain,
     statsTabAutoRotate,
     setStatsTabAutoRotate,
     eventSlug,

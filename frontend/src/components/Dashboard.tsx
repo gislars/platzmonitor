@@ -4,7 +4,7 @@ import {
   isUnreachableApiErrorMessage,
   summarizeStatisticsFetchErrors,
 } from "../apiErrors";
-import { getRegistrationsPollIntervalMs, type StatisticsTab } from "../config";
+import { getRegistrationsPollIntervalMs, type Domain } from "../config";
 import { getKioskMode } from "../kiosk";
 import { isEntryStartInFutureOrNow } from "../entryStartTime";
 import { sortEntriesByDateTimeAsc } from "../sortEntries";
@@ -97,7 +97,7 @@ export function Dashboard() {
   }, [displayConfig.eventSlug, displayConfig.registrationsIncludePrevious]);
 
   useEffect(() => {
-    if (displayConfig.viewMode !== "statistics") {
+    if (displayConfig.view !== "analysen") {
       return;
     }
     void loadRegistrationsStats();
@@ -107,7 +107,7 @@ export function Dashboard() {
     return () => window.clearInterval(id);
   }, [
     displayConfig.pollMs,
-    displayConfig.viewMode,
+    displayConfig.view,
     loadRegistrationsStats,
     statsRegistrationsError,
   ]);
@@ -191,7 +191,7 @@ export function Dashboard() {
 
   const showConnectivityHint =
     availabilityUnreachable ||
-    (displayConfig.viewMode === "statistics" && statsFetchSummary.showHeaderUnreachableHint);
+    (displayConfig.view === "analysen" && statsFetchSummary.showHeaderUnreachableHint);
 
   const rootClass = kiosk ? "dashboard dashboard--kiosk" : "dashboard";
 
@@ -199,7 +199,7 @@ export function Dashboard() {
   // vorherigem Offline-Fehler noch als "nicht erreichbar" markiert sind, dann einmal
   // sofort nachladen statt bis zum (ggf. sehr langen) Registrierungs-Poll zu warten.
   useEffect(() => {
-    if (displayConfig.viewMode !== "statistics") {
+    if (displayConfig.view !== "analysen") {
       return;
     }
     if (availabilityUnreachable) {
@@ -211,7 +211,7 @@ export function Dashboard() {
     void loadRegistrationsStats();
   }, [
     availabilityUnreachable,
-    displayConfig.viewMode,
+    displayConfig.view,
     loadRegistrationsStats,
     statsFetchSummary.showHeaderUnreachableHint,
   ]);
@@ -220,37 +220,37 @@ export function Dashboard() {
     gridTemplateColumns: `repeat(${groupGridColumns}, minmax(0, 1fr))`,
   } as const;
 
-  const tagline = displayConfig.viewMode === "tiles" ? "Freie Plätze" : "Statistik";
+  const tagline = displayConfig.view === "uebersicht" ? "Übersicht" : "Analysen";
 
-  // Statistik-Tabs (Begleitprogramm / Anmeldungen) nur im Statistik-Modus anzeigen.
-  // Im Modul "Freie Plätze" gibt es aktuell keine Diagramm-Kategorien, daher keine Tabs.
-  const showStatShell = displayConfig.viewMode === "statistics";
+  // Bereich-Navigation (Begleitprogramm / Anmeldungen) nur in Analysen anzeigen.
+  // In Übersicht gibt es aktuell keine Bereich-Auswahl, daher keine Tabs.
+  const showStatShell = displayConfig.view === "analysen";
 
-  const viewMode = displayConfig.viewMode;
-  const setViewMode = displayConfig.setViewMode;
-  const setStatisticsTab = displayConfig.setStatisticsTab;
+  const view = displayConfig.view;
+  const setView = displayConfig.setView;
+  const setDomain = displayConfig.setDomain;
 
-  const selectStatTab = useCallback(
-    (t: StatisticsTab) => {
-      if (viewMode === "tiles") {
-        setViewMode("statistics");
+  const selectDomain = useCallback(
+    (d: Domain) => {
+      if (view === "uebersicht") {
+        setView("analysen");
       }
-      setStatisticsTab(t);
+      setDomain(d);
     },
-    [viewMode, setViewMode, setStatisticsTab]
+    [view, setView, setDomain]
   );
 
   const statTabButtonsDisabled =
     kiosk &&
     displayConfig.statsTabAutoRotate &&
-    displayConfig.viewMode === "statistics";
+    displayConfig.view === "analysen";
 
   const helpBubbleText = useMemo(
     () =>
-      displayConfig.viewMode === "tiles"
+      displayConfig.view === "uebersicht"
         ? displayConfig.helpBubbleTiles
         : displayConfig.helpBubbleStatistics,
-    [displayConfig.viewMode, displayConfig.helpBubbleTiles, displayConfig.helpBubbleStatistics]
+    [displayConfig.view, displayConfig.helpBubbleTiles, displayConfig.helpBubbleStatistics]
   );
 
   return (
@@ -269,11 +269,11 @@ export function Dashboard() {
       {showStatShell ? (
         <div className="dashboard__statistics">
           <StatSubTabsNav
-            activeTab={displayConfig.statisticsTab}
-            onSelectTab={selectStatTab}
-            tabButtonsDisabled={statTabButtonsDisabled}
+            activeDomain={displayConfig.domain}
+            onSelectDomain={selectDomain}
+            disabled={statTabButtonsDisabled}
           />
-          {displayConfig.viewMode === "statistics" ? (
+          {displayConfig.view === "analysen" ? (
             <StatisticsView
               displayConfig={displayConfig}
               kiosk={kiosk}
@@ -317,13 +317,13 @@ export function Dashboard() {
         </p>
       )}
 
-      {displayConfig.viewMode === "tiles" && data && !hasEntries && !error && (
+      {displayConfig.view === "uebersicht" && data && !hasEntries && !error && (
         <p className="dashboard__state">
           Keine passenden Angebote (Filter) oder keine freien Einträge.
         </p>
       )}
 
-      {displayConfig.viewMode === "tiles" && visibleGroups.length > 0 ? (
+      {displayConfig.view === "uebersicht" && visibleGroups.length > 0 ? (
         <div className="dashboard__groups" style={groupsStyle}>
           {visibleGroups.map((group) => (
             <GroupSection
