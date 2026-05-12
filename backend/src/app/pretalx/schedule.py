@@ -16,6 +16,12 @@ from app.settings import Settings
 
 _log = get_logger("pretalx")
 
+
+def normalize_pretalx_code_for_match(raw: str) -> str:
+    """Kanonisierung fuer Meta-Codes (pretix) und Schedule-``code`` (pretalx): trim + casefold."""
+    return raw.strip().casefold()
+
+
 # Typische Praefixe in Pretix-Quoten: "WS03 - Titel", "WS03 - Titel" (Langstrich),
 # "WS03: Titel", "WS03-Titel"
 _WS_QUOTA_PREFIX = re.compile(r"(?i)^ws\s*\d*\s*[-:]\s*(.+)$")
@@ -151,9 +157,49 @@ def build_title_to_meta_map(
     return mapping
 
 
+def build_code_to_meta_map(
+    schedule_json: dict[str, Any],
+) -> dict[str, tuple[datetime, str | None, bool]]:
+    """Pro normalisiertem Submission-``code``: fruehester Start, Roh-``code``, Workshop-Flag.
+
+    Slots ohne nicht-leeren ``code`` werden uebersprungen.
+    """
+    mapping: dict[str, tuple[datetime, str | None, bool]] = {}
+    for ev in _extract_events_from_frab(schedule_json):
+        code_raw = _event_code(ev)
+        if code_raw is None:
+            continue
+        ck = normalize_pretalx_code_for_match(code_raw)
+        if not ck:
+            continue
+        title = ev.get("title")
+        if not isinstance(title, str) or not title.strip():
+            continue
+        start = ev.get("date")
+        if not isinstance(start, str) or not start.strip():
+            continue
+        dt = _parse_iso_datetime(start)
+        if dt is None:
+            continue
+        is_w = _event_submission_is_workshop(ev)
+        prev = mapping.get(ck)
+        if prev is None or dt < prev[0]:
+            mapping[ck] = (dt, code_raw, is_w)
+    return mapping
+
+
+def build_pretalx_schedule(schedule_json: dict[str, Any]) -> PretalxSchedule:
+    """Schedule-Maps aus einem FRAB-/pretalx-Export-JSON."""
+    return PretalxSchedule(
+        title_to_meta=build_title_to_meta_map(schedule_json),
+        code_to_meta=build_code_to_meta_map(schedule_json),
+    )
+
+
 @dataclass(frozen=True)
 class PretalxSchedule:
     title_to_meta: dict[str, tuple[datetime, str | None, bool]]
+    code_to_meta: dict[str, tuple[datetime, str | None, bool]]
 
 
 @dataclass(frozen=True)
@@ -199,7 +245,7 @@ def load_pretalx_schedule(settings: Settings) -> PretalxSchedule | None:
     if not isinstance(data, dict):
         return None
 
-    sched = PretalxSchedule(title_to_meta=build_title_to_meta_map(data))
+    sched = build_pretalx_schedule(data)
     _CACHE[url] = (now, sched)
     return sched
 
@@ -209,6 +255,19 @@ def match_pretalx_label(label: str, sched: PretalxSchedule | None) -> PretalxLab
         return None
     key = normalize_schedule_title_for_match(label)
     row = sched.title_to_meta.get(key)
+    if row is None:
+        return None
+    dt, code, is_w = row
+    return PretalxLabelMatch(sort_at=dt, code=code, is_workshop=is_w)
+
+
+def match_pretalx_by_code(raw_code: str, sched: PretalxSchedule | None) -> PretalxLabelMatch | None:
+    if sched is None:
+        return None
+    key = normalize_pretalx_code_for_match(raw_code)
+    if not key:
+        return None
+    row = sched.code_to_meta.get(key)
     if row is None:
         return None
     dt, code, is_w = row

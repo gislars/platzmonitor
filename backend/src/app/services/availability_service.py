@@ -14,8 +14,12 @@ from app.models.schema import (
     Group,
 )
 from app.pretalx.schedule import (
+    PretalxLabelMatch,
+    PretalxSchedule,
     load_pretalx_schedule,
+    match_pretalx_by_code,
     match_pretalx_from_candidates,
+    normalize_pretalx_code_for_match,
     normalize_schedule_title_for_match,
 )
 from app.pretix.client import fetch_event, fetch_items_and_quotas, fetch_waiting_list_entries
@@ -184,6 +188,91 @@ def _rules_excluding_workshops(rules: list[GroupRule]) -> list[GroupRule]:
     return [r for r in rules if r.id != "workshops"]
 
 
+def _pretalx_meta_codes_from_quota(
+    quota: dict[str, Any], items_by_id: dict[int, dict[str, Any]], meta_key: str
+) -> tuple[str | None, bool, list[str]]:
+    """Erste nicht-leere Meta-Zeichenkette (roh).
+
+    Zweiter Wert: True, wenn mehrere normalisiert verschiedene Codes vorkommen.
+    Dritter Wert: sortierte Liste der vorkommenden Rohstrings (Duplikate entfernt),
+    leer wenn keine Meta-Zeichenkette.
+    """
+    raws: list[str] = []
+    norms: list[str] = []
+    for iid_raw in quota.get("items") or []:
+        iid = _parse_api_id(iid_raw)
+        if iid is None:
+            continue
+        it = items_by_id.get(iid)
+        if not it:
+            continue
+        md = it.get("meta_data")
+        if isinstance(md, dict):
+            v = md.get(meta_key)
+            if isinstance(v, str) and v.strip():
+                s = v.strip()
+                raws.append(s)
+                norms.append(normalize_pretalx_code_for_match(s))
+        for var in it.get("variations") or []:
+            if not isinstance(var, dict):
+                continue
+            vmd = var.get("meta_data")
+            if isinstance(vmd, dict):
+                vv = vmd.get(meta_key)
+                if isinstance(vv, str) and vv.strip():
+                    s = vv.strip()
+                    raws.append(s)
+                    norms.append(normalize_pretalx_code_for_match(s))
+    if not raws:
+        return None, False, []
+    uniq_raw = sorted(set(raws))
+    return raws[0], len(set(norms)) > 1, uniq_raw
+
+
+def _resolve_pretalx_for_quota(
+    quota: dict[str, Any],
+    items_by_id: dict[int, dict[str, Any]],
+    schedule: PretalxSchedule | None,
+    settings: Settings,
+    label: str,
+) -> tuple[PretalxLabelMatch | None, str | None, str | None]:
+    """pretalx-Match; optional Diagnose-Tag (title|meta_unknown|none) und Meta-Rohzeile."""
+    labels = _pretalx_label_candidates(quota, items_by_id)
+    meta_key = settings.pretix_pretalx_meta_key.strip()
+    if not meta_key:
+        return match_pretalx_from_candidates(labels, schedule), None, None
+
+    first_meta_raw, meta_conflict, meta_raws_distinct = _pretalx_meta_codes_from_quota(
+        quota, items_by_id, meta_key
+    )
+    if meta_conflict:
+        _log.warning(
+            "pretix_quota_id=%s organizer=%s event=%s: mehrere verschiedene %r-Werte %s, nutze ersten",
+            quota.get("id"),
+            settings.organizer,
+            settings.event,
+            meta_key,
+            meta_raws_distinct,
+        )
+
+    px_code: PretalxLabelMatch | None = None
+    if schedule is not None and first_meta_raw:
+        px_code = match_pretalx_by_code(first_meta_raw, schedule)
+    px_title = match_pretalx_from_candidates(labels, schedule)
+
+    if px_code is not None:
+        return px_code, "code", None
+
+    diag: str
+    if first_meta_raw and schedule is not None:
+        diag = "meta_unknown"
+    elif px_title is not None:
+        diag = "title"
+    else:
+        diag = "none"
+    return px_title, diag, first_meta_raw if diag == "meta_unknown" else None
+
+
 def _pretalx_label_candidates(
     quota: dict[str, Any], items_by_id: dict[int, dict[str, Any]]
 ) -> list[str]:
@@ -283,7 +372,22 @@ def build_availability(settings: Settings) -> AvailabilityResponse:
         if item is not None and item.get("active") is False:
             continue
 
-        px = match_pretalx_from_candidates(_pretalx_label_candidates(quota, items_by_id), schedule)
+        px, pretalx_diag, meta_unknown_raw = _resolve_pretalx_for_quota(
+            quota, items_by_id, schedule, settings, label
+        )
+        if pretalx_diag in ("title", "meta_unknown", "none"):
+            suffix = ""
+            if pretalx_diag == "meta_unknown" and meta_unknown_raw:
+                suffix = f" pretalx_meta_raw={meta_unknown_raw[:40]!r}"
+            _log.info(
+                "pretalx_match=%s pretix_quota_id=%s label=%s organizer=%s event=%s%s",
+                pretalx_diag,
+                str(quota.get("id", "")),
+                label,
+                settings.organizer,
+                settings.event,
+                suffix,
+            )
         sort_at: datetime | None
         pretalx_code: str | None
 

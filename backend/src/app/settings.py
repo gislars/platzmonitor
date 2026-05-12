@@ -17,6 +17,15 @@ class Settings(BaseSettings):
 
     pretix_base_url: str = Field(default="https://pretix.eu", alias="PRETIX_BASE_URL")
     pretix_token: str = Field(default="", alias="PRETIX_TOKEN")
+    pretix_pretalx_meta_key: str = Field(
+        default="",
+        alias="PRETIX_PRETALX_META_KEY",
+        description=(
+            "Name der pretix Item-Meta-Property (Schluessel in item.meta_data) "
+            "mit Pretalx-Submission-Code; leer = nur Titel-Matching, kein Code-Pfad "
+            "und keine Match-Diagnose-INFO-Logs."
+        ),
+    )
     http_user_agent: str = Field(
         default="fossgis-platzmonitor/0.1.0",
         alias="HTTP_USER_AGENT",
