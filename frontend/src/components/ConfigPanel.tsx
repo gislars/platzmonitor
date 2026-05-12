@@ -7,7 +7,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import type { StatisticsTab, ViewMode } from "../config";
+import type { Domain, View } from "../config";
 import { getKioskMode } from "../kiosk";
 import { THEMES, type ThemeId } from "../themes";
 import type { DisplayConfigState } from "../useDisplayConfig";
@@ -206,11 +206,11 @@ export function ConfigPanel({ config }: Props) {
             <label className="config-panel__field">
               <span>Hauptansicht</span>
               <select
-                value={config.viewMode}
-                onChange={(e) => config.setViewMode(e.target.value as ViewMode)}
+                value={config.view}
+                onChange={(e) => config.setView(e.target.value as View)}
               >
-                <option value="tiles">Freie Plätze</option>
-                <option value="statistics">Statistik</option>
+                <option value="uebersicht">Übersicht</option>
+                <option value="analysen">Analysen</option>
               </select>
             </label>
             <label className="config-panel__field">
@@ -244,17 +244,17 @@ export function ConfigPanel({ config }: Props) {
             <summary className="config-panel__accordion-summary">Ansicht</summary>
             <div className="config-panel__accordion-body">
               <label className="config-panel__field">
-                <span>Start-Tab unter Statistik</span>
+                <span>Start-Bereich in Analysen</span>
                 <select
-                  value={config.statisticsTab}
-                  onChange={(e) => config.setStatisticsTab(e.target.value as StatisticsTab)}
-                  disabled={config.viewMode !== "statistics"}
+                  value={config.domain}
+                  onChange={(e) => config.setDomain(e.target.value as Domain)}
+                  disabled={config.view !== "analysen"}
                 >
-                  <option value="workshops">Begleitprogramm</option>
-                  <option value="registrations">Anmeldungen</option>
+                  <option value="begleitprogramm">Begleitprogramm</option>
+                  <option value="anmeldungen">Anmeldungen</option>
                 </select>
               </label>
-              {config.viewMode === "statistics" && !getKioskMode() ? (
+              {config.view === "analysen" && !getKioskMode() ? (
                 <label className="config-panel__field config-panel__field--checkbox">
                   <input
                     type="checkbox"
@@ -265,12 +265,12 @@ export function ConfigPanel({ config }: Props) {
                   <span>Zwischen Begleitprogramm und Anmeldungen wechseln (Kiosk-Modus)</span>
                 </label>
               ) : null}
-              {config.viewMode === "statistics" && !getKioskMode() ? (
+              {config.view === "analysen" && !getKioskMode() ? (
                 <p className="config-panel__microhint" role="note" id={`${panelId}-kiosk-rotate-hint`}>
                   Gilt nur, wenn die Seite mit <code>?kiosk=1</code> oder als Kiosk-Build geöffnet wird.
                 </p>
               ) : null}
-              {config.viewMode === "statistics" ? (
+              {config.view === "analysen" ? (
                 <label className="config-panel__field config-panel__field--checkbox">
                   <input
                     type="checkbox"
@@ -287,7 +287,7 @@ export function ConfigPanel({ config }: Props) {
             <summary className="config-panel__accordion-summary">Raster und Blättern</summary>
             <div className="config-panel__accordion-body">
               <p className="config-panel__lead">
-                Spalten, Zeilen und Seiten gelten für Freie Plätze und Statistik.
+                Spalten, Zeilen und Seiten gelten für Übersicht und Analysen.
               </p>
               <div className="config-panel__row2">
                 <label className="config-panel__field">
@@ -359,7 +359,7 @@ export function ConfigPanel({ config }: Props) {
                 </label>
                 <p className="config-panel__microhint" role="note" id={`${panelId}-rotation-hint`}>
                   Nur sichtbar, wenn mehrere Gruppenspalten nebeneinander stehen oder Teillisten über mehrere Seiten
-                  weiterblättern (Freie Plätze und Statistik).
+                  weiterblättern (Übersicht und Analysen).
                 </p>
               </details>
             </div>
@@ -413,7 +413,7 @@ export function ConfigPanel({ config }: Props) {
                 „Zurück auf Standard“ unten stellen Sie die Vorgaben der Installation wieder her (max. 500 Zeichen).
               </p>
               <label className="config-panel__field">
-                <span>Freie Plätze</span>
+                <span>Übersicht</span>
                 <textarea
                   rows={2}
                   maxLength={500}
@@ -422,7 +422,7 @@ export function ConfigPanel({ config }: Props) {
                 />
               </label>
               <label className="config-panel__field">
-                <span>Statistik</span>
+                <span>Analysen</span>
                 <textarea
                   rows={2}
                   maxLength={500}

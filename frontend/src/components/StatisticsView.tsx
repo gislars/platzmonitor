@@ -42,33 +42,33 @@ export function StatisticsView({
   onGlobalPageSelect,
   onOpenEntryDetail,
 }: Props) {
-  const { statisticsTab, statsTabAutoRotate, pageRotationMs, setStatisticsTab } = displayConfig;
+  const { domain, statsTabAutoRotate, pageRotationMs, setDomain } = displayConfig;
 
-  const statisticsTabRef = useRef(statisticsTab);
+  const domainRef = useRef(domain);
   useLayoutEffect(() => {
-    statisticsTabRef.current = statisticsTab;
-  }, [statisticsTab]);
+    domainRef.current = domain;
+  }, [domain]);
 
   useEffect(() => {
     if (!kiosk || !statsTabAutoRotate) {
       return;
     }
     const id = window.setInterval(() => {
-      const cur = statisticsTabRef.current;
-      setStatisticsTab(cur === "workshops" ? "registrations" : "workshops");
+      const cur = domainRef.current;
+      setDomain(cur === "begleitprogramm" ? "anmeldungen" : "begleitprogramm");
     }, pageRotationMs);
     return () => window.clearInterval(id);
-  }, [kiosk, statsTabAutoRotate, pageRotationMs, setStatisticsTab]);
+  }, [kiosk, statsTabAutoRotate, pageRotationMs, setDomain]);
 
   const regEvents = registrations?.events ?? [];
   const { excursionEntries, workshopEntries } = useMemo(
     () => splitBookingHistoryEntries(visibleGroups),
     [visibleGroups]
   );
-  const bookingHistoryPages = useMemo<Array<"excursions" | "workshops">>(() => {
-    const p: Array<"excursions" | "workshops"> = [];
+  const bookingHistoryPages = useMemo<Array<"exkursionen" | "workshops">>(() => {
+    const p: Array<"exkursionen" | "workshops"> = [];
     if (excursionEntries.length > 0) {
-      p.push("excursions");
+      p.push("exkursionen");
     }
     if (workshopEntries.length > 0) {
       p.push("workshops");
@@ -84,7 +84,7 @@ export function StatisticsView({
         </p>
       ) : null}
 
-      {statisticsTab === "workshops" ? (
+      {domain === "begleitprogramm" ? (
         <div className="dashboard__statistics-body">
           {bookingHistoryPages.length === 0 ? (
             <p className="dashboard__state">Keine Einträge im Begleitprogramm zum Anzeigen.</p>
@@ -94,9 +94,9 @@ export function StatisticsView({
               items={bookingHistoryPages}
               itemKey={(k) => k}
               renderItem={(k) =>
-                k === "excursions" ? (
+                k === "exkursionen" ? (
                   <BookingHistoryChart
-                    title="Exkursionen · gebuchte Plätze"
+                    title="Kategorie Exkursionen · gebuchte Plätze"
                     standIso={availabilityFetchedAt}
                     entries={excursionEntries}
                     kiosk={kiosk}
@@ -106,7 +106,7 @@ export function StatisticsView({
                   />
                 ) : (
                   <BookingHistoryChart
-                    title="Workshops · gebuchte Plätze"
+                    title="Kategorie Workshops · gebuchte Plätze"
                     standIso={availabilityFetchedAt}
                     entries={workshopEntries}
                     kiosk={kiosk}

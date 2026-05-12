@@ -157,23 +157,29 @@ export function getDefaultHelpBubbleStatistics(): string {
   );
 }
 
-export type ViewMode = "tiles" | "statistics";
-export type StatisticsTab = "workshops" | "registrations";
+export type View = "uebersicht" | "analysen";
+export type Domain = "begleitprogramm" | "anmeldungen";
 
-export function getDefaultViewMode(): ViewMode {
+export function getDefaultView(): View {
   const raw = import.meta.env.VITE_DEFAULT_VIEW_MODE?.trim();
-  if (raw === "statistics") {
-    return "statistics";
+  if (raw === "analysen" || raw === "statistics") {
+    return "analysen";
   }
-  return "tiles";
+  if (raw === "uebersicht" || raw === "tiles") {
+    return "uebersicht";
+  }
+  return "uebersicht";
 }
 
-export function getDefaultStatisticsTab(): StatisticsTab {
+export function getDefaultDomain(): Domain {
   const raw = import.meta.env.VITE_DEFAULT_STATS_TAB?.trim();
-  if (raw === "registrations") {
-    return "registrations";
+  if (raw === "anmeldungen" || raw === "registrations") {
+    return "anmeldungen";
   }
-  return "workshops";
+  if (raw === "begleitprogramm" || raw === "workshops") {
+    return "begleitprogramm";
+  }
+  return "begleitprogramm";
 }
 
 /** Intervall für Registrierungs-Aggregation; `VITE_REGISTRATIONS_POLL_MS`, Vorgabe 1 h. */

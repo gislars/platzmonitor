@@ -1,30 +1,30 @@
-import type { StatisticsTab } from "../config";
+import type { Domain } from "../config";
 
 type Props = {
-  activeTab: StatisticsTab;
-  onSelectTab: (tab: StatisticsTab) => void;
-  tabButtonsDisabled: boolean;
+  activeDomain: Domain;
+  onSelectDomain: (domain: Domain) => void;
+  disabled: boolean;
 };
 
 /** Begleitprogramm / Anmeldungen – eine Implementierung fuer Statistik-Shell und optional Kachelmodus. */
-export function StatSubTabsNav({ activeTab, onSelectTab, tabButtonsDisabled }: Props) {
+export function StatSubTabsNav({ activeDomain, onSelectDomain, disabled }: Props) {
   return (
-    <nav className="stat-tabs" aria-label="Statistik-Tabs">
+    <nav className="stat-tabs" aria-label="Bereich-Auswahl in Analysen">
       <button
         type="button"
-        className={`stat-tabs__btn${activeTab === "workshops" ? " stat-tabs__btn--active" : ""}`}
-        aria-pressed={activeTab === "workshops"}
-        disabled={tabButtonsDisabled}
-        onClick={() => onSelectTab("workshops")}
+        className={`stat-tabs__btn${activeDomain === "begleitprogramm" ? " stat-tabs__btn--active" : ""}`}
+        aria-pressed={activeDomain === "begleitprogramm"}
+        disabled={disabled}
+        onClick={() => onSelectDomain("begleitprogramm")}
       >
         Begleitprogramm
       </button>
       <button
         type="button"
-        className={`stat-tabs__btn${activeTab === "registrations" ? " stat-tabs__btn--active" : ""}`}
-        aria-pressed={activeTab === "registrations"}
-        disabled={tabButtonsDisabled}
-        onClick={() => onSelectTab("registrations")}
+        className={`stat-tabs__btn${activeDomain === "anmeldungen" ? " stat-tabs__btn--active" : ""}`}
+        aria-pressed={activeDomain === "anmeldungen"}
+        disabled={disabled}
+        onClick={() => onSelectDomain("anmeldungen")}
       >
         Anmeldungen
       </button>
